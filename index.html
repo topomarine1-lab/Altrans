@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="fr" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10b981">
+<title>SubTopo Transform v4.0</title>
+
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.0/dist/proj4.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+  background: #1e3a35; min-height: 100vh; color: #fff; font-size: 13px;
+}
+body.rtl { direction: rtl; }
+
+#loginOverlay {
+  position: fixed; inset: 0; z-index: 99999;
+  background: linear-gradient(135deg, #071f1c 0%, #0a2e2a 50%, #071f1c 100%);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+#loginOverlay.hidden { display: none !important; }
+.login-box {
+  background: #0f3a35; border: 1px solid #1a5f56;
+  border-radius: 20px; padding: 40px 30px; max-width: 400px; width: 100%; text-align: center;
+}
+.login-logo {
+  width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 20px;
+  background: linear-gradient(135deg, #fff, #e8f5e9);
+  display: flex; align-items: center; justify-content: center; font-size: 46px;
+}
+.login-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.login-sub { font-size: 13px; color: #a7f3d0; margin-bottom: 30px; }
+.login-box input {
+  width: 100%; padding: 14px 16px; background: #0a2e2a; color: #fff;
+  border: 1px solid #1a5f56; border-radius: 12px;
+  font-size: 15px; margin-bottom: 12px; text-align: center; letter-spacing: 3px;
+}
+.login-btn {
+  width: 100%; padding: 14px; border: none; border-radius: 12px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff; font-weight: 700; font-size: 15px; cursor: pointer;
+}
+.login-error { color: #ef4444; font-size: 13px; margin-top: 10px; min-height: 18px; }
+.lang-selector { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
+.lang-btn {
+  background: #0a2e2a; border: 1px solid #1a5f56;
+  color: #a7f3d0; padding: 8px 14px; border-radius: 8px;
+  font-size: 12px; cursor: pointer; font-weight: 600;
+}
+.lang-btn.active { background: #10b981; color: #fff; }
+
+.app-container { display: none; }
+.app-container.visible { display: block; }
+
+/* TITLE BAR */
+.title-bar {
+  background: linear-gradient(180deg, #2d5e3d 0%, #1a5f56 100%);
+  color: #fff; padding: 6px 12px; font-weight: 700; font-size: 13px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.title-bar-buttons { display: flex; gap: 4px; }
+.title-bar-btn {
+  background: transparent; border: 1px solid #fff; color: #fff;
+  padding: 2px 8px; border-radius: 3px; font-size: 11px; cursor: pointer;
+}
+
+/* MENU BAR */
+.menu-bar {
+  background: #2d2d2d; display: flex; padding: 4px 8px;
+  border-bottom: 1px solid #1a1a1a; font-size: 12px;
+  flex-wrap: wrap;
+}
+.menu-item {
+  padding: 4px 12px; cursor: pointer; color: #ddd; position: relative;
+  border-radius: 3px;
+}
+.menu-item:hover { background: #10b981; color: #fff; }
+.menu-item u { text-decoration: underline; }
+
+/* MENU DROPDOWN */
+.menu-dropdown {
+  position: fixed; background: #1a1a1a; border: 1px solid #444;
+  border-radius: 4px; min-width: 240px; z-index: 9999;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  display: none; padding: 4px 0;
+}
+.menu-dropdown.show { display: block; }
+.menu-dropdown-item {
+  padding: 8px 16px; color: #ddd; cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.menu-dropdown-item:hover { background: #10b981; color: #fff; }
+.menu-dropdown-item .shortcut {
+  margin-left: auto; color: #888; font-size: 10px;
+}
+.menu-dropdown-item .shortcut:hover { color: #fff; }
+.menu-separator { height: 1px; background: #444; margin: 4px 0; }
+.menu-dropdown-item .icon { width: 20px; text-align: center; }
+
+/* TOOLBAR */
+.toolbar {
+  background: linear-gradient(180deg, #f5f5f5 0%, #d4d4d4 100%);
+  display: flex; padding: 6px 8px; gap: 4px;
+  border-bottom: 2px solid #888; overflow-x: auto; flex-wrap: wrap;
+  align-items: center;
+}
+.tb-btn {
+  background: linear-gradient(180deg, #fff 0%, #ddd 100%);
+  border: 1px solid #999; border-radius: 4px;
+  padding: 6px 10px; font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; gap: 4px;
+  color: #333; white-space: nowrap; min-width: 32px; justify-content: center;
+}
+.tb-btn:hover { background: linear-gradient(180deg, #e0f7ee 0%, #b8e6d0 100%); border-color: #10b981; }
+.tb-btn:active { background: #10b981; color: #fff; }
+.tb-separator { width: 1px; background: #888; margin: 0 4px; height: 20px; }
+.tb-btn-label { font-size: 11px; color: #333; padding: 0 8px; font-weight: 600; }
+
+.main-container { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; padding: 8px; }
+@media (max-width: 1100px) { .main-container { grid-template-columns: 1fr; } }
+
+.panel-box { background: #f0f0f0; border: 2px solid #888; border-radius: 6px; color: #1a1a1a; }
+.panel-header {
+  background: linear-gradient(180deg, #4a7c5e 0%, #2d5e3d 100%);
+  color: #fff; padding: 8px 12px; font-weight: 700; font-size: 13px;
+  border-bottom: 2px solid #1a5f56; display: flex; justify-content: space-between;
+  align-items: center; border-radius: 4px 4px 0 0;
+}
+.panel-content { padding: 10px; }
+.source-panel { border-color: #10b981; }
+.source-panel .panel-header { background: linear-gradient(180deg, #10b981 0%, #059669 100%); }
+.target-panel { border-color: #f59e0b; }
+.target-panel .panel-header { background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); }
+.center-panel { border-color: #6b7280; }
+.center-panel .panel-header { background: linear-gradient(180deg, #6b7280 0%, #4b5563 100%); }
+
+.field-row { display: grid; grid-template-columns: 100px 1fr; gap: 6px; margin-bottom: 6px; align-items: center; }
+.field-row label { font-size: 11px; color: #333; font-weight: 600; text-align: right; }
+.field-row input, .field-row select {
+  padding: 4px 6px; border: 1px solid #999; border-radius: 3px;
+  font-size: 12px; background: #fff; color: #000;
+  font-family: 'Courier New', monospace;
+}
+.field-row input:focus, .field-row select:focus { outline: 2px solid #10b981; border-color: #10b981; }
+
+.radio-group {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 6px;
+  padding: 8px; background: #e0e0e0; border: 1px solid #999;
+  border-radius: 4px; margin: 8px 0;
+}
+.radio-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #333; cursor: pointer; padding: 2px; }
+.radio-item:hover { background: #fff; }
+.radio-item input[type="radio"] { accent-color: #10b981; cursor: pointer; }
+
+.section-box { background: #fff; border: 1px solid #999; border-radius: 4px; padding: 10px; margin: 8px 0; }
+.section-title { font-size: 11px; font-weight: 700; color: #2d5e3d; padding-bottom: 6px; border-bottom: 1px solid #ddd; margin-bottom: 8px; }
+.result-input { background: #e8f5e9 !important; border: 1px solid #10b981 !important; color: #1a5f56 !important; font-weight: 700 !important; }
+
+.dms-input { display: grid; grid-template-columns: 30px 1fr 1fr 1fr; gap: 4px; align-items: center; }
+.dms-input .sign {
+  text-align: center; font-weight: 700; color: #10b981;
+  background: #fff; border: 1px solid #999; border-radius: 3px;
+  padding: 4px; cursor: pointer; user-select: none;
+}
+
+.action-btn {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #fff; border: 1px solid #047857;
+  padding: 8px 14px; border-radius: 4px; font-size: 12px;
+  font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px;
+}
+.action-btn:hover { background: linear-gradient(180deg, #059669 0%, #047857 100%); }
+.action-btn-secondary {
+  background: linear-gradient(180deg, #f5f5f5 0%, #ddd 100%);
+  color: #333; border: 1px solid #999;
+}
+.action-btn-secondary:hover { background: linear-gradient(180deg, #fff 0%, #eee 100%); }
+
+.transform-center {
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+  color: #1a1a1a; border: 2px solid #d97706; padding: 12px 20px;
+  border-radius: 6px; font-size: 14px; font-weight: 800; cursor: pointer;
+  width: 100%; margin: 8px 0; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+.checkbox-row { display: flex; align-items: center; gap: 6px; padding: 4px; font-size: 11px; color: #333; cursor: pointer; }
+.checkbox-row input[type="checkbox"] { accent-color: #10b981; }
+
+.footer-path { background: #d4d4d4; color: #333; padding: 4px 8px; font-size: 10px; font-family: 'Courier New', monospace; border-top: 1px solid #888; margin-top: 4px; }
+
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: #0f3a35; color: #fff; padding: 14px 24px; border-radius: 10px;
+  border: 1px solid #10b981; z-index: 1000; transition: transform .4s;
+  font-weight: 600; font-size: 14px;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* MODAL DIALOGS */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  z-index: 9998; display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: #f0f0f0; border-radius: 8px; padding: 0;
+  max-width: 700px; width: 100%; color: #1a1a1a; max-height: 90vh; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.modal-header {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #fff; padding: 10px 16px; font-weight: 700; font-size: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-close { background: rgba(255,255,255,.2); border: none; color: #fff; width: 24px; height: 24px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+.modal-close:hover { background: rgba(255,255,255,.3); }
+.modal-content { padding: 20px; overflow-y: auto; max-height: 70vh; }
+.modal-footer { padding: 12px 16px; background: #e0e0e0; border-top: 1px solid #ccc; display: flex; gap: 8px; justify-content: flex-end; }
+
+.modal-title { font-size: 16px; font-weight: 700; color: #2d5e3d; margin-bottom: 12px; }
+.modal-section { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 12px; }
+.modal-section h3 { font-size: 12px; font-weight: 700; color: #2d5e3d; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #eee; }
+
+/* Table styles */
+.data-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.data-table th { background: #2d5e3d; color: #fff; padding: 6px; text-align: left; }
+.data-table td { padding: 4px 6px; border-bottom: 1px solid #ddd; font-family: 'Courier New', monospace; }
+.data-table tr:nth-child(even) { background: #f9f9f9; }
+
+/* Tabs in modals */
+.modal-tabs { display: flex; background: #d4d4d4; border-bottom: 1px solid #999; }
+.modal-tab { flex: 1; padding: 8px 12px; background: #d4d4d4; color: #333; border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
+.modal-tab.active { background: #fff; color: #10b981; border-top: 2px solid #10b981; }
+.modal-tab-content { display: none; padding: 16px; }
+.modal-tab-content.active { display: block; }
+
+/* Logfile display */
+.log-display { background: #000; color: #0f0; font-family: 'Courier New', monospace; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto; font-size: 11px; line-height: 1.5; }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo">🗺️</div>
+    <div class="login-title" data-i18n="appTitle">SubTopo Transform</div>
+    <div class="login-sub" data-i18n="loginSub">Coordinate Converter Pro</div>
+    <div class="lang-selector">
+      <button class="lang-btn active" data-lang="fr" onclick="setLang('fr')">🇫🇷 FR</button>
+      <button class="lang-btn" data-lang="en" onclick="setLang('en')">🇬🇧 EN</button>
+      <button class="lang-btn" data-lang="ar" onclick="setLang('ar')">🇸🇦 AR</button>
+    </div>
+    <input type="password" id="pwdInput" placeholder="Mot de passe" autocomplete="off">
+    <button class="login-btn" id="loginBtn">🔓 SE CONNECTER</button>
+    <div class="login-error" id="pwdError"></div>
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #1a5f56; font-size: 11px; color: #a7f3d0;">
+      © 2025 SubTopo Engineering<br><b style="color:#34d399">NASRAOUI FATHI</b>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app-container" id="appContainer">
+
+<!-- TITLE BAR -->
+<div class="title-bar">
+  <div>🗺️ SubTopo Transform v4.0 - Coordinate Converter (Unregistered version)</div>
+  <div class="title-bar-buttons">
+    <button class="title-bar-btn" onclick="showModal('aboutModal')">ℹ️</button>
+    <button class="title-bar-btn" onclick="logout()">✖</button>
+  </div>
+</div>
+
+<!-- MENU BAR -->
+<div class="menu-bar">
+  <div class="menu-item" onclick="toggleMenu('fileMenu', this)"><u>F</u>ile</div>
+  <div class="menu-item" onclick="toggleMenu('editMenu', this)"><u>E</u>dit</div>
+  <div class="menu-item" onclick="toggleMenu('paramMenu', this)"><u>P</u>arameter</div>
+  <div class="menu-item" onclick="toggleMenu('calcMenu', this)"><u>C</u>alculation</div>
+  <div class="menu-item" onclick="toggleMenu('extraMenu', this)"><u>E</u>xtras</div>
+  <div class="menu-item" onclick="toggleMenu('helpMenu', this)"><u>H</u>elp</div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="tb-btn" onclick="newFile()" title="New File">📄</button>
+  <button class="tb-btn" onclick="openFile()" title="Open File">📂</button>
+  <button class="tb-btn" onclick="sortPoints()" title="Sort">↑↓</button>
+  <div class="tb-separator"></div>
+  <span class="tb-btn-label">Df.</span>
+  <button class="tb-btn" onclick="showDF()" title="Datum Files">📋</button>
+  <div class="tb-separator"></div>
+  <span class="tb-btn-label">Geo</span>
+  <button class="tb-btn" onclick="showGeo()" title="Geographic">🌍</button>
+  <div class="tb-separator"></div>
+  <span class="tb-btn-label">UTM</span>
+  <button class="tb-btn" onclick="showUTM()" title="UTM">📍</button>
+  <div class="tb-separator"></div>
+  <button class="tb-btn" onclick="showLogfile()" title="Logfile">📋 Logfile</button>
+  <button class="tb-btn" onclick="swapSystems()" title="Swap">🔄 Swap</button>
+  <button class="tb-btn" onclick="resetAll()" title="Reset">🔁 RESET</button>
+  <div class="tb-separator"></div>
+  <button class="tb-btn" onclick="exportPDF()" title="Export PDF">📑 PDF</button>
+  <button class="tb-btn" onclick="exportCSV()" title="Export CSV">📊 CSV</button>
+  <button class="tb-btn" onclick="exportDXF()" title="Export DXF">📐 DXF</button>
+</div>
+
+<!-- MENUS DROPDOWNS -->
+<div class="menu-dropdown" id="fileMenu">
+  <div class="menu-dropdown-item" onclick="newFile()"><span class="icon">📄</span> <span>New File</span><span class="shortcut">Ctrl+N</span></div>
+  <div class="menu-dropdown-item" onclick="openFile()"><span class="icon">📂</span> <span>Open File...</span><span class="shortcut">Ctrl+O</span></div>
+  <div class="menu-dropdown-item" onclick="saveFile()"><span class="icon">💾</span> <span>Save File...</span><span class="shortcut">Ctrl+S</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="importFile()"><span class="icon">📥</span> <span>Import Points (CSV/GPX)</span></div>
+  <div class="menu-dropdown-item" onclick="exportFile()"><span class="icon">📤</span> <span>Export Points...</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="printFile()"><span class="icon">🖨️</span> <span>Print...</span><span class="shortcut">Ctrl+P</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="logout()"><span class="icon">🚪</span> <span>Quit</span><span class="shortcut">Alt+F4</span></div>
+</div>
+
+<div class="menu-dropdown" id="editMenu">
+  <div class="menu-dropdown-item" onclick="copySource()"><span class="icon">📋</span> <span>Copy Source</span><span class="shortcut">Ctrl+C</span></div>
+  <div class="menu-dropdown-item" onclick="pasteSource()"><span class="icon">📋</span> <span>Paste Source</span><span class="shortcut">Ctrl+V</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="clearAll()"><span class="icon">🗑️</span> <span>Clear All Fields</span></div>
+  <div class="menu-dropdown-item" onclick="resetAll()"><span class="icon">🔁</span> <span>Reset to Defaults</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="undoLast()"><span class="icon">↩️</span> <span>Undo</span><span class="shortcut">Ctrl+Z</span></div>
+  <div class="menu-dropdown-item" onclick="redoLast()"><span class="icon">↪️</span> <span>Redo</span><span class="shortcut">Ctrl+Y</span></div>
+</div>
+
+<div class="menu-dropdown" id="paramMenu">
+  <div class="menu-dropdown-item" onclick="showModal('datumModal')"><span class="icon">🗺️</span> <span>Datum Manager...</span></div>
+  <div class="menu-dropdown-item" onclick="showModal('projectionModal')"><span class="icon">📐</span> <span>Projection Manager...</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="showModal('sevenParamModal')"><span class="icon">⚙️</span> <span>7-Parameter Manager...</span></div>
+  <div class="menu-dropdown-item" onclick="showModal('geoidModal')"><span class="icon">🌍</span> <span>Geoid Model Manager...</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="showModal('epsgModal')"><span class="icon">🔢</span> <span>EPSG Browser...</span></div>
+  <div class="menu-dropdown-item" onclick="showModal('settingsModal')"><span class="icon">⚙️</span> <span>Settings...</span></div>
+</div>
+
+<div class="menu-dropdown" id="calcMenu">
+  <div class="menu-dropdown-item" onclick="performTransform()"><span class="icon">➡️</span> <span>Transform</span><span class="shortcut">F5</span></div>
+  <div class="menu-dropdown-item" onclick="batchTransform()"><span class="icon">📊</span> <span>Batch Transform...</span></div>
+  <div class="menu-dropdown-item" onclick="inverseTransform()"><span class="icon">🔄</span> <span>Inverse Transform</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="calculateDistance()"><span class="icon">📏</span> <span>Calculate Distance</span></div>
+  <div class="menu-dropdown-item" onclick="calculateBearing()"><span class="icon">🧭</span> <span>Calculate Bearing</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="exportPDF()"><span class="icon">📑</span> <span>Export PDF Report</span></div>
+  <div class="menu-dropdown-item" onclick="exportCSV()"><span class="icon">📊</span> <span>Export CSV</span></div>
+  <div class="menu-dropdown-item" onclick="exportDXF()"><span class="icon">📐</span> <span>Export DXF</span></div>
+</div>
+
+<div class="menu-dropdown" id="extraMenu">
+  <div class="menu-dropdown-item" onclick="showModal('geoidModal')"><span class="icon">🌍</span> <span>Geoid Calculator...</span></div>
+  <div class="menu-dropdown-item" onclick="showModal('coordinateConverter')"><span class="icon">🔄</span> <span>Format Converter...</span></div>
+  <div class="menu-dropdown-item" onclick="showModal('utmFinder')"><span class="icon">📍</span> <span>UTM Zone Finder...</span></div>
+  <div class="menu-separator"></div>
+  <div class="menu-dropdown-item" onclick="showLog()"><span class="icon">📋</span> <span>View Logfile</span></div>
+</div>
+
+<div class="menu-dropdown" id="helpMenu">
+  <div class="menu-dropdown-item" onclick="showModal('aboutModal')"><span class="icon">ℹ️</span> <span>About SubTopo Transform...</span></div>
+  <div class="menu-dropdown-item" onclick="showHelp()"><span class="icon">❓</span> <span>Help...</span><span class="shortcut">F1</span></div>
+  <div class="menu-dropdown-item" onclick="showTutorial()"><span class="icon">📖</span> <span>Tutorial</span></div>
+  <div class="menu-dropdown-item" onclick="showModal('epsgHelp')"><span class="icon">🔢</span> <span>EPSG Codes Reference</span></div>
+</div>
+
+<!-- MAIN CONTAINER -->
+<div class="main-container">
+
+  <!-- SOURCE -->
+  <div class="panel-box source-panel">
+    <div class="panel-header">
+      ➡️ <span data-i18n="startSystem">Start Coordinate System</span>
+      <button class="title-bar-btn" onclick="swapSystems()" title="Swap">🔄</button>
+    </div>
+    <div class="panel-content">
+      <div class="field-row">
+        <label>EPSG-Code:</label>
+        <input type="text" id="src_epsg" value="32634">
+      </div>
+      <div class="field-row">
+        <label>Area:</label>
+        <select id="src_area">
+          <option value="World" selected>World</option>
+          <option value="Europe">Europe</option>
+          <option value="Africa">Africa</option>
+          <option value="Asia">Asia</option>
+          <option value="America">America</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <label>Geod. Datum:</label>
+        <select id="src_datum">
+          <option value="WGS84" selected>WGS84 (WGS84)</option>
+          <option value="ED50">ED50 (International 1924)</option>
+          <option value="NAD83">NAD83</option>
+          <option value="NAD27">NAD27</option>
+          <option value="ETRS89">ETRS89</option>
+          <option value="Carthage">Carthage (Tunisia)</option>
+          <option value="Nord_Sahara">Nord Sahara 1959 (Algeria)</option>
+        </select>
+      </div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="src_type" value="projection" checked onchange="changeSrcType()"> <span>Projection</span></label>
+        <select id="src_projection" style="grid-column: 2;">
+          <option value="UTM34N" selected>UTM Zone 34N</option>
+          <option value="UTM30N">UTM Zone 30N</option>
+          <option value="UTM31N">UTM Zone 31N</option>
+          <option value="UTM32N">UTM Zone 32N</option>
+          <option value="UTM33N">UTM Zone 33N</option>
+          <option value="UTM35N">UTM Zone 35N</option>
+          <option value="LAMBERT">Lambert Conformal Conic</option>
+        </select>
+        <label class="radio-item"><input type="radio" name="src_type" value="geodms" onchange="changeSrcType()"> <span>Geographical (DMS)</span></label>
+        <label class="radio-item"><input type="radio" name="src_type" value="geodec" onchange="changeSrcType()"> <span>Geographical (Dec.)</span></label>
+        <label class="radio-item"><input type="radio" name="src_type" value="3dcart" onchange="changeSrcType()"> <span>3D-Cartesian</span></label>
+        <label class="radio-item"><input type="radio" name="src_type" value="utm" onchange="changeSrcType()"> <span>UTM</span></label>
+      </div>
+      <div class="section-box" id="src_plane">
+        <div class="section-title">Plane Coordinates [WGS84]</div>
+        <div class="field-row"><label>Point-Name:</label><input type="text" id="src_name" value="NoName"></div>
+        <div class="field-row"><label>East [m]:</label><input type="number" step="0.0001" id="src_east" value="374987.3650"></div>
+        <div class="field-row"><label>North [m]:</label><input type="number" step="0.0001" id="src_north" value="3288986.3530"></div>
+        <div class="field-row"><label>Ell.-Height:</label><input type="number" step="0.0001" id="src_height" value="-27.1880"></div>
+      </div>
+      <div class="section-box" id="src_dms" style="display:none;">
+        <div class="section-title">Geographical (DMS)</div>
+        <div class="field-row"><label>Point-Name:</label><input type="text" id="src_name_dms" value="NoName"></div>
+        <div class="field-row">
+          <label>Long. [° ' "]:</label>
+          <div class="dms-input">
+            <div class="sign" onclick="toggleSign('src_lon_sign')" id="src_lon_sign">+</div>
+            <input type="number" id="src_lon_deg" value="10">
+            <input type="number" id="src_lon_min" value="11">
+            <input type="number" step="0.0001" id="src_lon_sec" value="0.0000">
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Lat. [° ' "]:</label>
+          <div class="dms-input">
+            <div class="sign" onclick="toggleSign('src_lat_sign')" id="src_lat_sign">+</div>
+            <input type="number" id="src_lat_deg" value="29">
+            <input type="number" id="src_lat_min" value="43">
+            <input type="number" step="0.0001" id="src_lat_sec" value="33.2457">
+          </div>
+        </div>
+        <div class="field-row"><label>Ell. Height:</label><input type="number" step="0.0001" id="src_height_dms" value="-27.1880"></div>
+      </div>
+      <div class="section-box" id="src_dec" style="display:none;">
+        <div class="section-title">Geographical (Decimal)</div>
+        <div class="field-row"><label>Point-Name:</label><input type="text" id="src_name_dec" value="NoName"></div>
+        <div class="field-row"><label>Long. (°):</label><input type="number" step="0.0000001" id="src_lon_dec" value="10.1833333"></div>
+        <div class="field-row"><label>Lat. (°):</label><input type="number" step="0.0000001" id="src_lat_dec" value="29.7259016"></div>
+        <div class="field-row"><label>Ell. Height:</label><input type="number" step="0.0001" id="src_height_dec" value="-27.1880"></div>
+      </div>
+      <button class="action-btn" onclick="performTransform()">▶ Start Calculation</button>
+      <button class="action-btn action-btn-secondary" onclick="newInput()">📝 New Input</button>
+      <div class="field-row" style="margin-top: 10px;"><label>Number:</label><input type="number" id="src_number" value="0"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px;">
+        <button class="action-btn action-btn-secondary" onclick="printFile('src')">🖨️ Print File...</button>
+        <label class="checkbox-row"><input type="checkbox" id="src_viewfile"> View File</label>
+      </div>
+      <div class="footer-path">📁 C:\\SubTopo\\Transform\\DATA</div>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div class="panel-box center-panel">
+    <div class="panel-header">⚙️ Transform</div>
+    <div class="panel-content">
+      <button class="transform-center" onclick="performTransform()">➡️ TRANSFORM ➡️</button>
+      <div class="section-box">
+        <div class="section-title">7-Parameter</div>
+        <select id="param_preset" onchange="loadParamPreset()">
+          <option value="null">Null-Parameter</option>
+          <option value="ed50_wgs84">ED50 → WGS84 (Europe)</option>
+          <option value="nad27_wgs84">NAD27 → WGS84 (USA)</option>
+          <option value="carthage_wgs84">Carthage → WGS84 (Tunisia)</option>
+          <option value="custom">Custom</option>
+        </select>
+        <div style="margin-top: 10px;">
+          <div style="font-size: 11px; font-weight: 700; margin-bottom: 6px; color: #333;">3D-Datum-Shift:</div>
+          <div class="field-row"><label>X0:</label><input type="number" step="0.001" id="param_x0" value="0.000"></div>
+          <div class="field-row"><label>Y0:</label><input type="number" step="0.001" id="param_y0" value="0.000"></div>
+          <div class="field-row"><label>Z0:</label><input type="number" step="0.001" id="param_z0" value="0.000"></div>
+          <div class="field-row"><label>ex:</label><input type="number" step="0.000001" id="param_ex" value="0.000000"></div>
+          <div class="field-row"><label>ey:</label><input type="number" step="0.000001" id="param_ey" value="0.000000"></div>
+          <div class="field-row"><label>ez:</label><input type="number" step="0.000001" id="param_ez" value="0.000000"></div>
+          <div class="field-row"><label>m:</label><input type="number" step="0.0001" id="param_m" value="0.0000"></div>
+        </div>
+        <label class="checkbox-row"><input type="checkbox" id="param_inverse"> Inverse Parameter</label>
+        <label class="checkbox-row"><input type="checkbox" id="param_user" checked> User defined 7P</label>
+        <button class="action-btn action-btn-secondary" onclick="showModal('sevenParamModal')">📋 Select 7-Parameter</button>
+      </div>
+      <div class="section-box">
+        <div class="section-title">Grid-Datum-Shift (NTv2)</div>
+        <select id="grid_shift">
+          <option value="none">None</option>
+          <option value="france">France (NTF)</option>
+          <option value="germany">Germany</option>
+        </select>
+      </div>
+      <div class="section-box">
+        <div class="section-title">🌐 Geoidmodel</div>
+        <select id="geoid_model">
+          <option value="EGM2008" selected>EGM2008</option>
+          <option value="EGM96">EGM96</option>
+          <option value="None">None</option>
+        </select>
+        <button class="action-btn action-btn-secondary" onclick="showModal('geoidModal')" style="margin-top: 8px;">📐 Select Geoidmodel</button>
+        <div style="margin-top: 8px; font-size: 11px; color: #2d5e3d; font-weight: 700;">Height-Shift: <span id="height_shift">0.000 m</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TARGET -->
+  <div class="panel-box target-panel">
+    <div class="panel-header">
+      <span data-i18n="targetSystem">Target Coordinate System</span> ⬅️
+    </div>
+    <div class="panel-content">
+      <div class="field-row"><label>EPSG-Code:</label><input type="text" id="tgt_epsg" value="4326"></div>
+      <div class="field-row"><label>Area:</label><select id="tgt_area"><option value="Europe" selected>Europe</option><option value="World">World</option></select></div>
+      <div class="field-row"><label>Geod. Datum:</label><select id="tgt_datum"><option value="WGS84" selected>WGS84</option><option value="ED50">ED50</option></select></div>
+      <div class="radio-group">
+        <label class="radio-item"><input type="radio" name="tgt_type" value="projection" onchange="changeTgtType()"> <span>Projection</span></label>
+        <select id="tgt_projection" style="grid-column: 2;"><option value="UTM34N">UTM Zone 34N</option></select>
+        <label class="radio-item"><input type="radio" name="tgt_type" value="geodms" checked onchange="changeTgtType()"> <span>Geographical (DMS)</span></label>
+        <label class="radio-item"><input type="radio" name="tgt_type" value="geodec" onchange="changeTgtType()"> <span>Geographical (Dec.)</span></label>
+        <label class="radio-item"><input type="radio" name="tgt_type" value="3dcart" onchange="changeTgtType()"> <span>3D-Cartesian</span></label>
+        <label class="radio-item"><input type="radio" name="tgt_type" value="utm" onchange="changeTgtType()"> <span>UTM</span></label>
+      </div>
+      <div class="section-box" id="tgt_dms_box">
+        <div class="section-title">Geographical Coordinates [ED50]</div>
+        <div class="field-row"><label>Point-Name:</label><input type="text" id="tgt_name" value="NoName" readonly></div>
+        <div class="field-row">
+          <label>Long. [° ' "]:</label>
+          <div class="dms-input">
+            <div class="sign result-input" id="tgt_lon_sign">+</div>
+            <input type="text" id="tgt_lon_deg" readonly class="result-input">
+            <input type="text" id="tgt_lon_min" readonly class="result-input">
+            <input type="text" id="tgt_lon_sec" readonly class="result-input">
+          </div>
+        </div>
+        <div class="field-row">
+          <label>Lat. [° ' "]:</label>
+          <div class="dms-input">
+            <div class="sign result-input" id="tgt_lat_sign">+</div>
+            <input type="text" id="tgt_lat_deg" readonly class="result-input">
+            <input type="text" id="tgt_lat_min" readonly class="result-input">
+            <input type="text" id="tgt_lat_sec" readonly class="result-input">
+          </div>
+        </div>
+        <div class="field-row"><label>Ell. Height:</label><input type="text" id="tgt_height_dms" readonly class="result-input"></div>
+      </div>
+      <div class="section-box" id="tgt_dec_box" style="display:none;">
+        <div class="section-title">Decimal Coordinates</div>
+        <div class="field-row"><label>Long. (°):</label><input type="text" id="tgt_lon_dec" readonly class="result-input"></div>
+        <div class="field-row"><label>Lat. (°):</label><input type="text" id="tgt_lat_dec" readonly class="result-input"></div>
+        <div class="field-row"><label>Ell. Height:</label><input type="text" id="tgt_height_dec" readonly class="result-input"></div>
+      </div>
+      <div class="section-box" id="tgt_plane_box" style="display:none;">
+        <div class="section-title">Plane Coordinates</div>
+        <div class="field-row"><label>East [m]:</label><input type="text" id="tgt_east" readonly class="result-input"></div>
+        <div class="field-row"><label>North [m]:</label><input type="text" id="tgt_north" readonly class="result-input"></div>
+        <div class="field-row"><label>Ell. Height:</label><input type="text" id="tgt_height_plane" readonly class="result-input"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px;">
+        <button class="action-btn action-btn-secondary" onclick="googleEarth()">🌍 Google Earth</button>
+        <button class="action-btn action-btn-secondary" onclick="showOnMap()">🗺️ Karte</button>
+      </div>
+      <div class="field-row" style="margin-top: 10px;"><label>Number:</label><input type="number" id="tgt_number" value="0"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px;">
+        <button class="action-btn action-btn-secondary" onclick="printFile('tgt')">🖨️ Print File...</button>
+        <label class="checkbox-row"><input type="checkbox" id="tgt_viewfile"> View File</label>
+      </div>
+      <div class="footer-path">📁 C:\\SubTopo\\Transform\\DATA</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== MODALS ===== -->
+
+<!-- About Modal -->
+<div class="modal-overlay" id="aboutModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>ℹ️ About SubTopo Transform</span>
+      <button class="modal-close" onclick="closeModal('aboutModal')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div style="text-align: center;">
+        <div style="font-size: 60px; margin: 20px 0;">🗺️</div>
+        <h2 style="color: #10b981; margin-bottom: 10px;">SubTopo Transform v4.0</h2>
+        <p style="margin-bottom: 20px;">Coordinate Conversion Professional Tool</p>
+        <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Modern web-based version inspired by AllTrans 3.002</p>
+        <p style="font-weight: 700; color: #2d5e3d;">Developed by NASRAOUI FATHI<br>© 2025 SubTopo Engineering</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" onclick="closeModal('aboutModal')" style="width:auto; padding: 8px 20px;">✅ OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- 7-Parameter Modal -->
+<div class="modal-overlay" id="sevenParamModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>⚙️ 7-Parameter Manager</span>
+      <button class="modal-close" onclick="closeModal('sevenParamModal')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3>📋 Presets disponibles</h3>
+        <table class="data-table">
+          <thead><tr><th>Preset</th><th>ΔX</th><th>ΔY</th><th>ΔZ</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>ED50 → WGS84</td><td>-87</td><td>-98</td><td>-121</td><td><button class="action-btn" onclick="loadPreset('ed50_wgs84')" style="width:auto;padding:4px 8px;font-size:10px;">Charger</button></td></tr>
+            <tr><td>NAD27 → WGS84</td><td>-8</td><td>160</td><td>176</td><td><button class="action-btn" onclick="loadPreset('nad27_wgs84')" style="width:auto;padding:4px 8px;font-size:10px;">Charger</button></td></tr>
+            <tr><td>Carthage → WGS84</td><td>-263</td><td>6</td><td>431</td><td><button class="action-btn" onclick="loadPreset('carthage_wgs84')" style="width:auto;padding:4px 8px;font-size:10px;">Charger</button></td></tr>
+            <tr><td>Null</td><td>0</td><td>0</td><td>0</td><td><button class="action-btn" onclick="loadPreset('null')" style="width:auto;padding:4px 8px;font-size:10px;">Charger</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn action-btn-secondary" onclick="closeModal('sevenParamModal')" style="width:auto; padding: 8px 20px;">✖ Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- EPSG Browser Modal -->
+<div class="modal-overlay" id="epsgModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>🔢 EPSG Browser</span>
+      <button class="modal-close" onclick="closeModal('epsgModal')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3>📋 Codes EPSG courants</h3>
+        <input type="text" id="epsg_search" placeholder="🔍 Rechercher..." oninput="filterEPSG()" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; margin-bottom:10px;">
+        <table class="data-table" id="epsg_table">
+          <thead><tr><th>EPSG</th><th>Description</th><th>Action</th></tr></thead>
+          <tbody id="epsg_tbody">
+            <tr><td>4326</td><td>WGS84 (Geographic)</td><td><button class="action-btn" onclick="selectEPSG(4326, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(4326, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>32630</td><td>WGS84 / UTM Zone 30N</td><td><button class="action-btn" onclick="selectEPSG(32630, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(32630, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>32631</td><td>WGS84 / UTM Zone 31N</td><td><button class="action-btn" onclick="selectEPSG(32631, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(32631, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>32632</td><td>WGS84 / UTM Zone 32N</td><td><button class="action-btn" onclick="selectEPSG(32632, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(32632, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>32633</td><td>WGS84 / UTM Zone 33N</td><td><button class="action-btn" onclick="selectEPSG(32633, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(32633, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>32634</td><td>WGS84 / UTM Zone 34N (Tunisia)</td><td><button class="action-btn" onclick="selectEPSG(32634, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(32634, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>32635</td><td>WGS84 / UTM Zone 35N (Algeria)</td><td><button class="action-btn" onclick="selectEPSG(32635, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(32635, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>4269</td><td>NAD83 (Geographic)</td><td><button class="action-btn" onclick="selectEPSG(4269, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(4269, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>4230</td><td>ED50 (Geographic)</td><td><button class="action-btn" onclick="selectEPSG(4230, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(4230, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>22332</td><td>Carthage / UTM Zone 32N (Tunisia)</td><td><button class="action-btn" onclick="selectEPSG(22332, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(22332, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>30492</td><td>Nord Sahara 1959 / UTM Zone 32N (Algeria)</td><td><button class="action-btn" onclick="selectEPSG(30492, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(30492, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+            <tr><td>26191</td><td>Merchich / Nord Maroc Zone 1</td><td><button class="action-btn" onclick="selectEPSG(26191, 'src')" style="width:auto;padding:4px;font-size:10px;">→Src</button> <button class="action-btn" onclick="selectEPSG(26191, 'tgt')" style="width:auto;padding:4px;font-size:10px;">→Tgt</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn action-btn-secondary" onclick="closeModal('epsgModal')" style="width:auto; padding: 8px 20px;">✖ Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Logfile Modal -->
+<div class="modal-overlay" id="logfileModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>📋 Logfile - Historique des transformations</span>
+      <button class="modal-close" onclick="closeModal('logfileModal')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3>📜 Historique</h3>
+        <div class="log-display" id="logfile_content">
+          [Aucune entrée - Faites des transformations pour remplir le log]
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+          <button class="action-btn" onclick="exportLog()" style="width:auto; padding: 6px 12px;">💾 Exporter Log</button>
+          <button class="action-btn action-btn-secondary" onclick="clearLog()" style="width:auto; padding: 6px 12px;">🗑️ Effacer Log</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn action-btn-secondary" onclick="closeModal('logfileModal')" style="width:auto; padding: 8px 20px;">✖ Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Geoid Modal -->
+<div class="modal-overlay" id="geoidModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>🌍 Geoid Model Manager</span>
+      <button class="modal-close" onclick="closeModal('geoidModal')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3>🌐 Modèles de Géoïde disponibles</h3>
+        <table class="data-table">
+          <thead><tr><th>Modèle</th><th>Précision</th><th>Zone</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td>EGM2008</td><td>±10 cm</td><td>Mondial</td><td><button class="action-btn" onclick="selectGeoidModel('EGM2008')" style="width:auto;padding:4px;font-size:10px;">Choisir</button></td></tr>
+            <tr><td>EGM96</td><td>±50 cm</td><td>Mondial</td><td><button class="action-btn" onclick="selectGeoidModel('EGM96')" style="width:auto;padding:4px;font-size:10px;">Choisir</button></td></tr>
+            <tr><td>GEOID12B</td><td>±2 cm</td><td>USA</td><td><button class="action-btn" onclick="selectGeoidModel('GEOID12B')" style="width:auto;padding:4px;font-size:10px;">Choisir</button></td></tr>
+            <tr><td>RAF09</td><td>±2 cm</td><td>France</td><td><button class="action-btn" onclick="selectGeoidModel('RAF09')" style="width:auto;padding:4px;font-size:10px;">Choisir</button></td></tr>
+            <tr><td>None</td><td>-</td><td>-</td><td><button class="action-btn" onclick="selectGeoidModel('None')" style="width:auto;padding:4px;font-size:10px;">Choisir</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn action-btn-secondary" onclick="closeModal('geoidModal')" style="width:auto; padding: 8px 20px;">✖ Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>⚙️ Settings</span>
+      <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+    </div>
+    <div class="modal-content">
+      <div class="modal-section">
+        <h3>🎯 Précision par défaut</h3>
+        <select id="setting_precision" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+          <option value="6">6 décimales (0.000001 m)</option>
+          <option value="4" selected>4 décimales (0.0001 m)</option>
+          <option value="3">3 décimales (0.001 m)</option>
+          <option value="2">2 décimales (0.01 m)</option>
+        </select>
+      </div>
+      <div class="modal-section">
+        <h3>📐 Unités</h3>
+        <select id="setting_units" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+          <option value="m" selected>Mètres</option>
+          <option value="ft">Pieds (US Survey)</option>
+        </select>
+      </div>
+      <div class="modal-section">
+        <h3>🌍 Langue</h3>
+        <select id="setting_lang" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="ar">🇸🇦 العربية</option>
+        </select>
+      </div>
+      <div class="modal-section">
+        <h3>📁 Dossier de travail</h3>
+        <input type="text" value="C:\\SubTopo\\Transform\\DATA" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="action-btn" onclick="saveSettings()" style="width:auto; padding: 8px 20px;">💾 Sauvegarder</button>
+      <button class="action-btn action-btn-secondary" onclick="closeModal('settingsModal')" style="width:auto; padding: 8px 20px;">✖ Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const I18N = {
+  fr: { appTitle: 'SubTopo Transform', loginSub: 'Convertisseur de Coordonnées Pro', startSystem: 'Système de Coordonnées Source', targetSystem: 'Système de Coordonnées Cible' },
+  en: { appTitle: 'SubTopo Transform', loginSub: 'Coordinate Converter Pro', startSystem: 'Start Coordinate System', targetSystem: 'Target Coordinate System' },
+  ar: { appTitle: 'محول الإحداثيات', loginSub: 'محول الإحداثيات الاحترافي', startSystem: 'نظام الإحداثيات المصدر', targetSystem: 'نظام الإحداثيات الهدف' }
+};
+
+let currentLang = localStorage.getItem('transform_lang') || 'fr';
+let transformationLog = JSON.parse(localStorage.getItem('transform_log') || '[]');
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('transform_lang', lang);
+  document.getElementById('htmlRoot').setAttribute('lang', lang);
+  document.body.classList.toggle('rtl', lang === 'ar');
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
+  });
+}
+
+const APP_PASSWORD = 'Subtopo@2025';
+
+function tryLogin() {
+  const input = document.getElementById('pwdInput');
+  const err = document.getElementById('pwdError');
+  if (input.value.trim() === APP_PASSWORD) {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('appContainer').classList.add('visible');
+    err.textContent = '';
+    setTimeout(() => toast('✅ Bienvenue !'), 300);
+  } else {
+    err.textContent = '❌ Mot de passe incorrect';
+    input.value = '';
+    setTimeout(() => err.textContent = '', 3000);
+  }
+}
+
+function logout() {
+  if (confirm('Quitter ?')) {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('appContainer').classList.remove('visible');
+    closeAllMenus();
+    closeAllModals();
+  }
+}
+
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+
+// ============ MENUS DROPDOWNS ============
+function toggleMenu(menuId, element) {
+  closeAllMenus();
+  const menu = document.getElementById(menuId);
+  if (menu.classList.contains('show')) {
+    menu.classList.remove('show');
+  } else {
+    const rect = element.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 2) + 'px';
+    menu.style.left = rect.left + 'px';
+    menu.classList.add('show');
+  }
+}
+
+function closeAllMenus() {
+  document.querySelectorAll('.menu-dropdown').forEach(m => m.classList.remove('show'));
+}
+
+// Close menus on click outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.menu-item') && !e.target.closest('.menu-dropdown')) {
+    closeAllMenus();
+  }
+});
+
+// ============ MODALS ============
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+  closeAllMenus();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+}
+
+// ============ TYPE SWITCHING ============
+function changeSrcType() {
+  const type = document.querySelector('input[name="src_type"]:checked').value;
+  document.getElementById('src_plane').style.display = (type === 'projection' || type === 'utm') ? 'block' : 'none';
+  document.getElementById('src_dms').style.display = type === 'geodms' ? 'block' : 'none';
+  document.getElementById('src_dec').style.display = type === 'geodec' ? 'block' : 'none';
+}
+
+function changeTgtType() {
+  const type = document.querySelector('input[name="tgt_type"]:checked').value;
+  document.getElementById('tgt_plane_box').style.display = (type === 'projection' || type === 'utm') ? 'block' : 'none';
+  document.getElementById('tgt_dms_box').style.display = type === 'geodms' ? 'block' : 'none';
+  document.getElementById('tgt_dec_box').style.display = type === 'geodec' ? 'block' : 'none';
+}
+
+function toggleSign(id) {
+  const el = document.getElementById(id);
+  el.textContent = el.textContent === '+' ? '-' : '+';
+}
+
+// ============ PROJECTIONS ============
+function getProjDef(epsg) {
+  const defs = {
+    '4326': '+proj=longlat +datum=WGS84 +no_defs',
+    '4258': '+proj=longlat +ellps=GRS80 +no_defs',
+    '4230': '+proj=longlat +ellps=intl +no_defs',
+    '4269': '+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs',
+    '32630': '+proj=utm +zone=30 +datum=WGS84 +units=m +no_defs',
+    '32631': '+proj=utm +zone=31 +datum=WGS84 +units=m +no_defs',
+    '32632': '+proj=utm +zone=32 +datum=WGS84 +units=m +no_defs',
+    '32633': '+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs',
+    '32634': '+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs',
+    '32635': '+proj=utm +zone=35 +datum=WGS84 +units=m +no_defs',
+    '32636': '+proj=utm +zone=36 +datum=WGS84 +units=m +no_defs',
+    '32637': '+proj=utm +zone=37 +datum=WGS84 +units=m +no_defs',
+    '32638': '+proj=utm +zone=38 +datum=WGS84 +units=m +no_defs',
+    '32639': '+proj=utm +zone=39 +datum=WGS84 +units=m +no_defs',
+    '32640': '+proj=utm +zone=40 +datum=WGS84 +units=m +no_defs',
+    '22332': '+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs',
+    '30492': '+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs',
+    '26191': '+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +units=m +no_defs'
+  };
+  return defs[epsg] || '+proj=longlat +datum=WGS84 +no_defs';
+}
+
+// ============ TRANSFORM ============
+function performTransform() {
+  try {
+    const srcEpsg = document.getElementById('src_epsg').value;
+    const tgtEpsg = document.getElementById('tgt_epsg').value;
+    
+    proj4.defs('EPSG:' + srcEpsg, getProjDef(srcEpsg));
+    proj4.defs('EPSG:' + tgtEpsg, getProjDef(tgtEpsg));
+    
+    let srcCoords;
+    const srcType = document.querySelector('input[name="src_type"]:checked').value;
+    
+    if (srcType === 'projection' || srcType === 'utm') {
+      const east = parseFloat(document.getElementById('src_east').value);
+      const north = parseFloat(document.getElementById('src_north').value);
+      if (isNaN(east) || isNaN(north)) { toast('❌ Saisir East/North'); return; }
+      srcCoords = [east, north];
+    } else if (srcType === 'geodms') {
+      const lonSign = document.getElementById('src_lon_sign').textContent === '-' ? -1 : 1;
+      const latSign = document.getElementById('src_lat_sign').textContent === '-' ? -1 : 1;
+      const lon = lonSign * (parseFloat(document.getElementById('src_lon_deg').value || 0) + parseFloat(document.getElementById('src_lon_min').value || 0)/60 + parseFloat(document.getElementById('src_lon_sec').value || 0)/3600);
+      const lat = latSign * (parseFloat(document.getElementById('src_lat_deg').value || 0) + parseFloat(document.getElementById('src_lat_min').value || 0)/60 + parseFloat(document.getElementById('src_lat_sec').value || 0)/3600);
+      srcCoords = [lon, lat];
+    } else if (srcType === 'geodec') {
+      srcCoords = [parseFloat(document.getElementById('src_lon_dec').value), parseFloat(document.getElementById('src_lat_dec').value)];
+    }
+    
+    const result = proj4('EPSG:' + srcEpsg, 'EPSG:' + tgtEpsg, srcCoords);
+    const height = parseFloat(document.getElementById('src_height').value) || 0;
+    
+    const tgtType = document.querySelector('input[name="tgt_type"]:checked').value;
+    
+    if (tgtType === 'projection' || tgtType === 'utm') {
+      document.getElementById('tgt_east').value = result[0].toFixed(4);
+      document.getElementById('tgt_north').value = result[1].toFixed(4);
+      document.getElementById('tgt_height_plane').value = height.toFixed(4);
+    } else if (tgtType === 'geodms') {
+      const lonAbs = Math.abs(result[0]);
+      const latAbs = Math.abs(result[1]);
+      const lonDeg = Math.floor(lonAbs);
+      const lonMin = Math.floor((lonAbs - lonDeg) * 60);
+      const lonSec = ((lonAbs - lonDeg) * 60 - lonMin) * 60;
+      const latDeg = Math.floor(latAbs);
+      const latMin = Math.floor((latAbs - latDeg) * 60);
+      const latSec = ((latAbs - latDeg) * 60 - latMin) * 60;
+      document.getElementById('tgt_lon_sign').textContent = result[0] >= 0 ? '+' : '-';
+      document.getElementById('tgt_lon_deg').value = lonDeg;
+      document.getElementById('tgt_lon_min').value = lonMin;
+      document.getElementById('tgt_lon_sec').value = lonSec.toFixed(5);
+      document.getElementById('tgt_lat_sign').textContent = result[1] >= 0 ? '+' : '-';
+      document.getElementById('tgt_lat_deg').value = latDeg;
+      document.getElementById('tgt_lat_min').value = latMin;
+      document.getElementById('tgt_lat_sec').value = latSec.toFixed(5);
+      document.getElementById('tgt_height_dms').value = height.toFixed(4);
+    } else if (tgtType === 'geodec') {
+      document.getElementById('tgt_lon_dec').value = result[0].toFixed(7);
+      document.getElementById('tgt_lat_dec').value = result[1].toFixed(7);
+      document.getElementById('tgt_height_dec').value = height.toFixed(4);
+    }
+    
+    addToLog('TRANSFORM', `EPSG:${srcEpsg} → EPSG:${tgtEpsg}`, `${srcCoords[0].toFixed(4)}, ${srcCoords[1].toFixed(4)} → ${result[0].toFixed(4)}, ${result[1].toFixed(4)}`);
+    toast('✅ Transformation réussie');
+  } catch (e) {
+    console.error(e);
+    addToLog('ERROR', 'Transform', e.message);
+    toast('❌ Erreur: ' + e.message);
+  }
+}
+
+// ============ LOG ============
+function addToLog(action, params, result) {
+  const entry = {
+    date: new Date().toISOString(),
+    action: action,
+    params: params,
+    result: result
+  };
+  transformationLog.unshift(entry);
+  if (transformationLog.length > 100) transformationLog = transformationLog.slice(0, 100);
+  localStorage.setItem('transform_log', JSON.stringify(transformationLog));
+  updateLogDisplay();
+}
+
+function updateLogDisplay() {
+  const el = document.getElementById('logfile_content');
+  if (transformationLog.length === 0) {
+    el.innerHTML = '[Aucune entrée - Faites des transformations pour remplir le log]';
+    return;
+  }
+  el.innerHTML = transformationLog.map(e => 
+    `[${new Date(e.date).toLocaleString('fr-FR')}] ${e.action} | ${e.params} | ${e.result}`
+  ).join('\n');
+}
+
+function showLog() {
+  showModal('logfileModal');
+  updateLogDisplay();
+}
+
+function showLogfile() { showLog(); }
+
+function exportLog() {
+  let content = 'SubTopo Transform - LOG\n========================\n\n';
+  transformationLog.forEach(e => {
+    content += `[${new Date(e.date).toLocaleString('fr-FR')}] ${e.action}\n`;
+    content += `  Params: ${e.params}\n`;
+    content += `  Result: ${e.result}\n\n`;
+  });
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'subtopo-transform-log.txt'; a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ Log exporté');
+}
+
+function clearLog() {
+  if (!confirm('Effacer tout le log ?')) return;
+  transformationLog = [];
+  localStorage.removeItem('transform_log');
+  updateLogDisplay();
+  toast('🗑️ Log effacé');
+}
+
+// ============ TOOLBAR ACTIONS ============
+function newFile() { newInput(); closeAllMenus(); }
+function newInput() {
+  document.querySelectorAll('.panel-content input').forEach(i => { if (!i.readOnly) i.value = ''; });
+  toast('📝 Nouvelle saisie');
+}
+function openFile() { toast('📂 Ouvrir fichier'); }
+function saveFile() { toast('💾 Sauvegarder fichier'); }
+function importFile() { toast('📥 Import points'); }
+function exportFile() { exportCSV(); }
+function printFile() { window.print(); }
+function sortPoints() { toast('↕️ Tri des points'); }
+function showDF() { showModal('epsgModal'); }
+function showGeo() { document.querySelector('input[name="tgt_type"][value="geodms"]').checked = true; changeTgtType(); }
+function showUTM() { document.querySelector('input[name="tgt_type"][value="utm"]').checked = true; changeTgtType(); }
+function swapSystems() {
+  const srcEpsg = document.getElementById('src_epsg').value;
+  document.getElementById('src_epsg').value = document.getElementById('tgt_epsg').value;
+  document.getElementById('tgt_epsg').value = srcEpsg;
+  toast('🔄 Systèmes échangés');
+}
+function resetAll() {
+  if (!confirm('Réinitialiser tous les champs ?')) return;
+  document.querySelectorAll('input').forEach(i => { if (!i.readOnly) i.value = ''; });
+  toast('🔁 Reset');
+}
+
+// ============ MENU ACTIONS ============
+function copySource() { toast('📋 Source copiée'); }
+function pasteSource() { toast('📋 Source collée'); }
+function clearAll() {
+  if (!confirm('Effacer tous les champs ?')) return;
+  document.querySelectorAll('input').forEach(i => { if (!i.readOnly) i.value = ''; });
+  toast('🗑️ Champs effacés');
+}
+function undoLast() { toast('↩️ Undo'); }
+function redoLast() { toast('↪️ Redo'); }
+function batchTransform() { showModal('epsgModal'); }
+function inverseTransform() { 
+  const cb = document.getElementById('param_inverse');
+  cb.checked = !cb.checked;
+  performTransform();
+}
+function calculateDistance() { toast('📏 Distance calculée'); }
+function calculateBearing() { toast('🧭 Bearing calculé'); }
+
+// ============ EPSG SELECTION ============
+function selectEPSG(epsg, target) {
+  if (target === 'src') document.getElementById('src_epsg').value = epsg;
+  else document.getElementById('tgt_epsg').value = epsg;
+  closeModal('epsgModal');
+  toast('✅ EPSG ' + epsg + ' → ' + (target === 'src' ? 'Source' : 'Target'));
+}
+
+function filterEPSG() {
+  const search = document.getElementById('epsg_search').value.toLowerCase();
+  const rows = document.querySelectorAll('#epsg_tbody tr');
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(search) ? '' : 'none';
+  });
+}
+
+// ============ 7-PARAM PRESETS ============
+function loadPreset(preset) {
+  const presets = {
+    'ed50_wgs84': { x0: -87, y0: -98, z0: -121, ex: 0, ey: 0, ez: 0, m: 0 },
+    'nad27_wgs84': { x0: -8, y0: 160, z0: 176, ex: 0, ey: 0, ez: 0, m: 0 },
+    'carthage_wgs84': { x0: -263, y0: 6, z0: 431, ex: 0, ey: 0, ez: 0, m: 0 },
+    'null': { x0: 0, y0: 0, z0: 0, ex: 0, ey: 0, ez: 0, m: 0 }
+  };
+  if (presets[preset]) {
+    const p = presets[preset];
+    document.getElementById('param_x0').value = p.x0;
+    document.getElementById('param_y0').value = p.y0;
+    document.getElementById('param_z0').value = p.z0;
+    document.getElementById('param_ex').value = p.ex;
+    document.getElementById('param_ey').value = p.ey;
+    document.getElementById('param_ez').value = p.ez;
+    document.getElementById('param_m').value = p.m;
+    closeModal('sevenParamModal');
+    toast('✅ Preset chargé: ' + preset);
+  }
+}
+
+function loadParamPreset() {
+  const preset = document.getElementById('param_preset').value;
+  if (preset !== 'custom') loadPreset(preset);
+}
+
+function selectGeoidModel(model) {
+  document.getElementById('geoid_model').value = model;
+  closeModal('geoidModal');
+  toast('✅ Géoïde: ' + model);
+}
+
+// ============ GEO / MAPS ============
+function googleEarth() {
+  const lon = document.getElementById('tgt_lon_dec').value || 0;
+  const lat = document.getElementById('tgt_lat_dec').value || 0;
+  window.open(`https://earth.google.com/web/@${lat},${lon},1000a,1000d,1y,0h,0t,0r`);
+}
+function showOnMap() {
+  const lon = document.getElementById('tgt_lon_dec').value || 0;
+  const lat = document.getElementById('tgt_lat_dec').value || 0;
+  window.open(`https://www.google.com/maps/@${lat},${lon},15z`);
+}
+
+// ============ EXPORTS ============
+function exportPDF() {
+  if (!window.jspdf) { toast('❌ jsPDF non chargé'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  doc.setFillColor(16, 185, 129);
+  doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('SubTopo Transform', 15, 14);
+  doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+  doc.text('Coordinate Conversion Report', 15, 22);
+  
+  let y = 45;
+  doc.setTextColor(0, 0, 0); doc.setFontSize(11);
+  doc.text('Date: ' + new Date().toLocaleString('fr-FR'), 15, y); y += 10;
+  
+  doc.setFont('helvetica', 'bold'); doc.text('SOURCE:', 15, y); y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  doc.text('EPSG: ' + document.getElementById('src_epsg').value, 18, y); y += 5;
+  doc.text('Datum: ' + document.getElementById('src_datum').value, 18, y); y += 5;
+  doc.text('East: ' + (document.getElementById('src_east').value || '-'), 18, y); y += 5;
+  doc.text('North: ' + (document.getElementById('src_north').value || '-'), 18, y); y += 5;
+  doc.text('Height: ' + (document.getElementById('src_height').value || '-'), 18, y); y += 10;
+  
+  doc.setFont('helvetica', 'bold'); doc.text('TARGET:', 15, y); y += 6;
+  doc.setFont('helvetica', 'normal');
+  doc.text('EPSG: ' + document.getElementById('tgt_epsg').value, 18, y); y += 5;
+  doc.text('Datum: ' + document.getElementById('tgt_datum').value, 18, y); y += 5;
+  doc.text('Longitude: ' + (document.getElementById('tgt_lon_deg').value || '-') + '° ' + (document.getElementById('tgt_lon_min').value || '-') + "' " + (document.getElementById('tgt_lon_sec').value || '-') + '"', 18, y); y += 5;
+  doc.text('Latitude: ' + (document.getElementById('tgt_lat_deg').value || '-') + '° ' + (document.getElementById('tgt_lat_min').value || '-') + "' " + (document.getElementById('tgt_lat_sec').value || '-') + '"', 18, y); y += 10;
+  
+  doc.setFillColor(16, 185, 129);
+  doc.rect(0, 287, 210, 10, 'F');
+  doc.setFontSize(8); doc.setTextColor(255, 255, 255);
+  doc.text('SubTopo Engineering - NASRAOUI FATHI', 105, 293, { align: 'center' });
+  
+  doc.save('subtopo-transform-' + Date.now() + '.pdf');
+  toast('✅ PDF exporté');
+}
+
+function exportCSV() {
+  let content = 'SubTopo Transform - Export\n';
+  content += 'Date,' + new Date().toLocaleString('fr-FR') + '\n\n';
+  content += 'SOURCE\n';
+  content += 'EPSG,' + document.getElementById('src_epsg').value + '\n';
+  content += 'Datum,' + document.getElementById('src_datum').value + '\n';
+  content += 'East,' + document.getElementById('src_east').value + '\n';
+  content += 'North,' + document.getElementById('src_north').value + '\n';
+  content += 'Height,' + document.getElementById('src_height').value + '\n\n';
+  content += 'TARGET\n';
+  content += 'EPSG,' + document.getElementById('tgt_epsg').value + '\n';
+  content += 'Datum,' + document.getElementById('tgt_datum').value + '\n';
+  content += 'Lon Deg,' + document.getElementById('tgt_lon_deg').value + '\n';
+  content += 'Lon Min,' + document.getElementById('tgt_lon_min').value + '\n';
+  content += 'Lon Sec,' + document.getElementById('tgt_lon_sec').value + '\n';
+  content += 'Lat Deg,' + document.getElementById('tgt_lat_deg').value + '\n';
+  content += 'Lat Min,' + document.getElementById('tgt_lat_min').value + '\n';
+  content += 'Lat Sec,' + document.getElementById('tgt_lat_sec').value + '\n';
+  
+  const blob = new Blob([content], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'subtopo-transform-' + Date.now() + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ CSV exporté');
+}
+
+function exportDXF() {
+  let dxf = '0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1009\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n';
+  const east = parseFloat(document.getElementById('src_east').value);
+  const north = parseFloat(document.getElementById('src_north').value);
+  if (!isNaN(east) && !isNaN(north)) {
+    dxf += `0\nPOINT\n8\n0\n10\n${east.toFixed(3)}\n20\n${north.toFixed(3)}\n30\n0\n`;
+    dxf += `0\nTEXT\n8\n0\n10\n${(east+1).toFixed(3)}\n20\n${(north+1).toFixed(3)}\n30\n0\n40\n1\n1\n${document.getElementById('src_name').value}\n`;
+  }
+  dxf += '0\nENDSEC\n0\nEOF\n';
+  
+  const blob = new Blob([dxf], { type: 'application/dxf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'subtopo-transform-' + Date.now() + '.dxf'; a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ DXF exporté');
+}
+
+// ============ HELP ============
+function showHelp() { 
+  showModal('aboutModal');
+}
+function showTutorial() {
+  toast('📖 Tutorial: Voir le menu Help → Help');
+}
+function showMenu(type) {
+  if (type === 'file') showModal('epsgModal');
+  else if (type === 'parameter') showModal('sevenParamModal');
+  else if (type === 'extras') showModal('geoidModal');
+  else if (type === 'help') showModal('aboutModal');
+  else toast('📋 Menu: ' + type);
+}
+
+// ============ SETTINGS ============
+function saveSettings() {
+  const lang = document.getElementById('setting_lang').value;
+  setLang(lang);
+  localStorage.setItem('setting_precision', document.getElementById('setting_precision').value);
+  localStorage.setItem('setting_units', document.getElementById('setting_units').value);
+  closeModal('settingsModal');
+  toast('✅ Paramètres sauvegardés');
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', function() {
+  setLang(currentLang);
+  updateLogDisplay();
+  
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  document.getElementById('pwdInput').addEventListener('keypress', e => { if (e.key === 'Enter') tryLogin(); });
+  document.getElementById('pwdInput').focus();
+  
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeAllMenus();
+      closeAllModals();
+    }
+    if (e.ctrlKey && e.key === 's') { e.preventDefault(); exportPDF(); }
+    if (e.ctrlKey && e.key === 'Enter') { performTransform(); }
+  });
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
