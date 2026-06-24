@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="fr" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10b981">
+<title>SubTopo Transform v4.0 - Coordinate Converter</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='95' fill='%23fff' stroke='%23ccc' stroke-width='3'/%3E%3Cpath d='M100,15 L107,40 L100,35 L93,40 Z M100,185 L93,160 L100,165 L107,160 Z M15,100 L40,93 L35,100 L40,107 Z M185,100 L160,107 L165,100 L160,93 Z' fill='%23999'/%3E%3Cpath d='M40,110 Q70,80 100,100 T160,110' stroke='%231e5a8a' stroke-width='8' fill='none'/%3E%3Cpath d='M40,125 Q70,100 100,118 T160,125' stroke='%2329b6f6' stroke-width='8' fill='none'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.0/dist/proj4.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#1e3a35;min-height:100vh;color:#fff;font-size:13px}
+body.rtl{direction:rtl}
+#loginOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#071f1c,#0a2e2a,#071f1c);display:flex;align-items:center;justify-content:center;padding:20px}
+#loginOverlay.hidden{display:none!important}
+.login-box{background:#0f3a35;border:1px solid #1a5f56;border-radius:20px;padding:40px 30px;max-width:400px;width:100%;text-align:center}
+.login-logo{width:100px;height:100px;border-radius:20px;margin:0 auto 20px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(16,185,129,.3);padding:10px}
+.subtopo-logo{width:100%;height:100%}
+.login-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.login-sub{font-size:13px;color:#a7f3d0;margin-bottom:30px}
+.login-box input{width:100%;padding:14px;background:#0a2e2a;color:#fff;border:1px solid #1a5f56;border-radius:12px;font-size:15px;margin-bottom:12px;text-align:center;letter-spacing:3px}
+.login-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.login-error{color:#ef4444;font-size:13px;margin-top:10px;min-height:18px}
+.lang-selector{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.lang-btn{background:#0a2e2a;border:1px solid #1a5f56;color:#a7f3d0;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600}
+.lang-btn.active{background:#10b981;color:#fff}
+.app-container{display:none}.app-container.visible{display:block}
+.title-bar{background:linear-gradient(180deg,#2d5e3d,#1a5f56);color:#fff;padding:6px 12px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.title-bar-logo{display:flex;align-items:center;gap:10px}
+.title-bar-logo .logo-icon{width:28px;height:28px;background:#fff;border-radius:6px;padding:3px;display:flex;align-items:center;justify-content:center}
+.title-bar-buttons{display:flex;gap:4px}
+.title-bar-btn{background:transparent;border:1px solid #fff;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer}
+.menu-bar{background:#2d2d2d;display:flex;padding:4px 8px;border-bottom:1px solid #1a1a1a;font-size:12px;flex-wrap:wrap}
+.menu-item{padding:4px 12px;cursor:pointer;color:#ddd;border-radius:3px}
+.menu-item:hover{background:#10b981;color:#fff}
+.menu-item u{text-decoration:underline}
+.menu-dropdown{position:fixed;background:#1a1a1a;border:1px solid #444;border-radius:4px;min-width:260px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;padding:4px 0}
+.menu-dropdown.show{display:block}
+.menu-dropdown-item{padding:8px 16px;color:#ddd;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px}
+.menu-dropdown-item:hover{background:#10b981;color:#fff}
+.menu-dropdown-item .shortcut{margin-left:auto;color:#888;font-size:10px}
+.menu-dropdown-item:hover .shortcut{color:#fff}
+.menu-separator{height:1px;background:#444;margin:4px 0}
+.toolbar{background:linear-gradient(180deg,#f5f5f5,#d4d4d4);display:flex;padding:6px 8px;gap:4px;border-bottom:2px solid #888;overflow-x:auto;flex-wrap:wrap;align-items:center}
+.tb-btn{background:linear-gradient(180deg,#fff,#ddd);border:1px solid #999;border-radius:4px;padding:6px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;color:#333;white-space:nowrap}
+.tb-btn:hover{background:linear-gradient(180deg,#e0f7ee,#b8e6d0);border-color:#10b981}
+.tb-btn:active{background:#10b981;color:#fff}
+.tb-separator{width:1px;background:#888;margin:0 4px;height:20px}
+.tb-btn-label{font-size:11px;color:#333;padding:0 8px;font-weight:600}
+.main-container{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:8px}
+@media(max-width:1100px){.main-container{grid-template-columns:1fr}}
+.panel-box{background:#f0f0f0;border:2px solid #888;border-radius:6px;color:#1a1a1a}
+.panel-header{color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-bottom:2px solid #1a5f56;display:flex;justify-content:space-between;align-items:center;border-radius:4px 4px 0 0}
+.panel-content{padding:10px}
+.source-panel{border-color:#10b981}
+.source-panel .panel-header{background:linear-gradient(180deg,#10b981,#059669)}
+.target-panel{border-color:#f59e0b}
+.target-panel .panel-header{background:linear-gradient(180deg,#f59e0b,#d97706)}
+.center-panel{border-color:#6b7280}
+.center-panel .panel-header{background:linear-gradient(180deg,#6b7280,#4b5563)}
+.field-row{display:grid;grid-template-columns:100px 1fr;gap:6px;margin-bottom:6px;align-items:center}
+.field-row label{font-size:11px;color:#333;font-weight:600;text-align:right}
+.field-row input,.field-row select{padding:4px 6px;border:1px solid #999;border-radius:3px;font-size:12px;background:#fff;color:#000;font-family:'Courier New',monospace}
+.field-row input:focus,.field-row select:focus{outline:2px solid #10b981;border-color:#10b981}
+.radio-group{display:grid;grid-template-columns:auto 1fr;gap:4px 6px;padding:8px;background:#e0e0e0;border:1px solid #999;border-radius:4px;margin:8px 0}
+.radio-item{display:flex;align-items:center;gap:4px;font-size:11px;color:#333;cursor:pointer;padding:2px}
+.radio-item:hover{background:#fff}
+.radio-item input[type="radio"]{accent-color:#10b981}
+.section-box{background:#fff;border:1px solid #999;border-radius:4px;padding:10px;margin:8px 0}
+.section-title{font-size:11px;font-weight:700;color:#2d5e3d;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:8px}
+.result-input{background:#e8f5e9!important;border:1px solid #10b981!important;color:#1a5f56!important;font-weight:700!important}
+.dms-input{display:grid;grid-template-columns:30px 1fr 1fr 1fr;gap:4px;align-items:center}
+.dms-input .sign{text-align:center;font-weight:700;color:#10b981;background:#fff;border:1px solid #999;border-radius:3px;padding:4px;cursor:pointer;user-select:none}
+.action-btn{background:linear-gradient(180deg,#10b981,#059669);color:#fff;border:1px solid #047857;padding:8px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:4px}
+.action-btn:hover{background:linear-gradient(180deg,#059669,#047857)}
+.action-btn-secondary{background:linear-gradient(180deg,#f5f5f5,#ddd);color:#333;border:1px solid #999}
+.action-btn-secondary:hover{background:linear-gradient(180deg,#fff,#eee)}
+.transform-center{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#1a1a1a;border:2px solid #d97706;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin:8px 0;box-shadow:0 2px 8px rgba(245,158,11,0.4);display:flex;align-items:center;justify-content:center;gap:8px}
+.checkbox-row{display:flex;align-items:center;gap:6px;padding:4px;font-size:11px;color:#333;cursor:pointer}
+.checkbox-row input[type="checkbox"]{accent-color:#10b981}
+.footer-path{background:#d4d4d4;color:#333;padding:4px 8px;font-size:10px;font-family:'Courier New',monospace;border-top:1px solid #888;margin-top:4px}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);background:#0f3a35;color:#fff;padding:14px 24px;border-radius:10px;border:1px solid #10b981;z-index:1000;transition:transform .4s;font-weight:600;font-size:14px}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal-box{background:#f0f0f0;border-radius:8px;max-width:700px;width:100%;color:#1a1a1a;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.modal-header{background:linear-gradient(180deg,#10b981,#059669);color:#fff;padding:10px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:14px}
+.modal-content{padding:20px;overflow-y:auto;max-height:70vh}
+.modal-footer{padding:12px 16px;background:#e0e0e0;border-top:1px solid #ccc;display:flex;gap:8px;justify-content:flex-end}
+.modal-section{background:#fff;border:1px solid #ddd;border-radius:4px;padding:12px;margin-bottom:12px}
+.modal-section h3{font-size:12px;font-weight:700;color:#2d5e3d;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #eee}
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{background:#2d5e3d;color:#fff;padding:6px;text-align:left}
+.data-table td{padding:4px 6px;border-bottom:1px solid #ddd;font-family:'Courier New',monospace}
+.data-table tr:nth-child(even){background:#f9f9f9}
+.log-display{background:#000;color:#0f0;font-family:'Courier New',monospace;padding:10px;border-radius:4px;max-height:400px;overflow-y:auto;font-size:11px;line-height:1.5;white-space:pre-wrap}
+.file-input-hidden{display:none}
+.help-section{background:#fff;border:1px solid #ddd;border-radius:4px;padding:16px}
+.help-section h3{color:#2d5e3d;margin-bottom:12px;font-size:14px}
+.help-section p{margin-bottom:8px;line-height:1.6;font-size:12px;color:#333}
+.help-section ul{margin-left:20px;margin-bottom:12px}
+.help-section li{margin-bottom:4px;font-size:12px;color:#333}
+.app-footer{background:linear-gradient(135deg,#0a2e2a,#1a5f56,#2d5e3d);color:#fff;padding:20px;border-top:3px solid #10b981;margin-top:30px;position:relative;overflow:hidden;box-shadow:0 -8px 20px rgba(0,0,0,0.4)}
+.app-footer::before{content:'';position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(16,185,129,0.05) 10px,rgba(16,185,129,0.05) 20px);pointer-events:none}
+.footer-content{position:relative;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;max-width:1400px;margin:0 auto}
+.footer-left{display:flex;align-items:center;gap:14px}
+.footer-logo-box{width:50px;height:50px;background:#fff;border-radius:10px;padding:4px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.footer-company-name{font-size:14px;font-weight:800;color:#fff}
+.footer-tagline{font-size:11px;color:#a7f3d0;margin-top:2px}
+.footer-center{text-align:center}
+.footer-developed-by{font-size:10px;color:#a7f3d0;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px}
+.footer-author-name{font-size:20px;font-weight:900;color:#fef3c7;text-shadow:0 2px 8px rgba(0,0,0,0.5);letter-spacing:2px;background:linear-gradient(135deg,#10b981,#059669);padding:8px 24px;border-radius:25px;border:2px solid #34d399;box-shadow:0 4px 16px rgba(16,185,129,0.5);display:inline-block}
+.footer-right{text-align:right}
+.footer-version-label{font-size:11px;color:#a7f3d0;margin-bottom:4px}
+.footer-version-number{display:inline-block;background:rgba(16,185,129,0.3);padding:4px 12px;border-radius:6px;border:1px solid #10b981;font-size:14px;font-weight:800;color:#fff}
+.footer-app-name{font-size:10px;color:#a7f3d0;margin-top:6px;font-style:italic}
+.footer-bottom{position:relative;text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.15);font-size:10px;color:#a7f3d0}
+@media(max-width:768px){.footer-content{flex-direction:column;text-align:center}.footer-right{text-align:center}.footer-author-name{font-size:16px}}
+</style>
+</head>
+<body>
+<svg style="display:none"><defs><symbol id="subtopo-logo" viewBox="0 0 200 200"><circle cx="100" cy="100" r="95" fill="#fff" stroke="#ccc" stroke-width="3"/><path d="M100,15 L107,40 L100,35 L93,40 Z" fill="#999"/><path d="M100,185 L93,160 L100,165 L107,160 Z" fill="#999"/><path d="M15,100 L40,93 L35,100 L40,107 Z" fill="#999"/><path d="M185,100 L160,107 L165,100 L160,93 Z" fill="#999"/><path d="M30,108 Q60,75 100,100 T170,108" stroke="#1e5a8a" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M30,125 Q60,100 100,118 T170,125" stroke="#29b6f6" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="#666"/></symbol></defs></svg>
+
+<!-- LOGIN -->
+<div id="loginOverlay">
+<div class="login-box">
+<div class="login-logo"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div>
+<div class="login-title">SubTopo Transform</div>
+<div class="login-sub">Coordinate Converter Pro</div>
+<div class="lang-selector">
+<button class="lang-btn active" data-lang="fr" onclick="setLang('fr')">🇫🇷 FR</button>
+<button class="lang-btn" data-lang="en" onclick="setLang('en')">🇬🇧 EN</button>
+<button class="lang-btn" data-lang="ar" onclick="setLang('ar')">🇸🇦 AR</button>
+</div>
+<input type="password" id="pwdInput" placeholder="Mot de passe" autocomplete="off">
+<button class="login-btn" id="loginBtn">🔓 SE CONNECTER</button>
+<div class="login-error" id="pwdError"></div>
+<div style="margin-top:24px;padding-top:20px;border-top:1px solid #1a5f56;font-size:11px;color:#a7f3d0">© 2025 SubTopo Engineering<br><b style="color:#34d399">NASRAOUI FATHI</b></div>
+</div></div>
+
+<!-- APP -->
+<div class="app-container" id="appContainer">
+<div class="title-bar">
+<div class="title-bar-logo">
+<div class="logo-icon"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div>
+<span>SubTopo Transform v4.0 - Coordinate Converter</span>
+</div>
+<div class="title-bar-buttons">
+<button class="title-bar-btn" onclick="showModal('aboutModal')">ℹ️</button>
+<button class="title-bar-btn" onclick="logout()">✖</button>
+</div></div>
+
+<div class="menu-bar">
+<div class="menu-item" onclick="toggleMenu('fileMenu',this)"><u>F</u>ile</div>
+<div class="menu-item" onclick="toggleMenu('editMenu',this)"><u>E</u>dit</div>
+<div class="menu-item" onclick="toggleMenu('paramMenu',this)"><u>P</u>arameter</div>
+<div class="menu-item" onclick="toggleMenu('calcMenu',this)"><u>C</u>alculation</div>
+<div class="menu-item" onclick="toggleMenu('extraMenu',this)"><u>E</u>xtras</div>
+<div class="menu-item" onclick="toggleMenu('helpMenu',this)"><u>H</u>elp</div>
+</div>
+
+<div class="toolbar">
+<button class="tb-btn" onclick="newFile()">📄</button>
+<button class="tb-btn" onclick="openFile()">📂</button>
+<button class="tb-btn" onclick="sortPoints()">↑↓</button>
+<div class="tb-separator"></div>
+<span class="tb-btn-label">Df.</span>
+<button class="tb-btn" onclick="showDF()">📋</button>
+<div class="tb-separator"></div>
+<span class="tb-btn-label">Geo</span>
+<button class="tb-btn" onclick="showGeo()">🌍</button>
+<div class="tb-separator"></div>
+<span class="tb-btn-label">UTM</span>
+<button class="tb-btn" onclick="showUTM()">📍</button>
+<div class="tb-separator"></div>
+<button class="tb-btn" onclick="showLogfile()">📋 Logfile</button>
+<button class="tb-btn" onclick="swapSystems()">🔄 Swap</button>
+<button class="tb-btn" onclick="resetAll()">🔁 RESET</button>
+<div class="tb-separator"></div>
+<button class="tb-btn" onclick="exportPDF()">📑 PDF</button>
+<button class="tb-btn" onclick="exportCSV()">📊 CSV</button>
+<button class="tb-btn" onclick="exportDXF()">📐 DXF</button>
+</div>
+
+<input type="file" id="fileImport" class="file-input-hidden" accept=".csv,.txt,.gpx,.kml,.json">
+<input type="file" id="fileOpen" class="file-input-hidden" accept=".json">
+
+<!-- Menus -->
+<div class="menu-dropdown" id="fileMenu">
+<div class="menu-dropdown-item" onclick="newFile()"><span>📄</span> Nouveau<span class="shortcut">Ctrl+N</span></div>
+<div class="menu-dropdown-item" onclick="openFile()"><span>📂</span> Ouvrir<span class="shortcut">Ctrl+O</span></div>
+<div class="menu-dropdown-item" onclick="saveFile()"><span>💾</span> Sauvegarder<span class="shortcut">Ctrl+S</span></div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="importFile()"><span>📥</span> Importer CSV/GPX/KML</div>
+<div class="menu-dropdown-item" onclick="exportPDF()"><span>📑</span> Exporter PDF</div>
+<div class="menu-dropdown-item" onclick="exportCSV()"><span>📊</span> Exporter CSV</div>
+<div class="menu-dropdown-item" onclick="exportDXF()"><span>📐</span> Exporter DXF</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="printPage()"><span>🖨️</span> Imprimer<span class="shortcut">Ctrl+P</span></div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="logout()"><span>🚪</span> Quitter</div>
+</div>
+
+<div class="menu-dropdown" id="editMenu">
+<div class="menu-dropdown-item" onclick="copySource()"><span>📋</span> Copier Source</div>
+<div class="menu-dropdown-item" onclick="pasteSource()"><span>📋</span> Coller Source</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="clearAllFields()"><span>🗑️</span> Effacer tout</div>
+<div class="menu-dropdown-item" onclick="resetAll()"><span>🔁</span> Réinitialiser</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="loadDefaultTunisia()"><span>🇹🇳</span> Défaut Tunisie</div>
+<div class="menu-dropdown-item" onclick="loadDefaultAlgeria()"><span>🇩🇿</span> Défaut Algérie</div>
+</div>
+
+<div class="menu-dropdown" id="paramMenu">
+<div class="menu-dropdown-item" onclick="showModal('datumModal')"><span>🗺️</span> Datums</div>
+<div class="menu-dropdown-item" onclick="showModal('sevenParamModal')"><span>⚙️</span> 7-Paramètres</div>
+<div class="menu-dropdown-item" onclick="showModal('geoidModal')"><span>🌍</span> Géoïde</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="showModal('epsgModal')"><span>🔢</span> Catalogue EPSG</div>
+<div class="menu-dropdown-item" onclick="showModal('settingsModal')"><span>⚙️</span> Paramètres</div>
+</div>
+
+<div class="menu-dropdown" id="calcMenu">
+<div class="menu-dropdown-item" onclick="performTransform()"><span>➡️</span> Transformer<span class="shortcut">F5</span></div>
+<div class="menu-dropdown-item" onclick="batchTransform()"><span>📊</span> Par lot</div>
+<div class="menu-dropdown-item" onclick="inverseTransform()"><span>🔄</span> Inverse</div>
+</div>
+
+<div class="menu-dropdown" id="extraMenu">
+<div class="menu-dropdown-item" onclick="showModal('utmFinderModal')"><span>📍</span> Zone UTM</div>
+<div class="menu-dropdown-item" onclick="showModal('formatConverterModal')"><span>🔄</span> Convertisseur</div>
+<div class="menu-dropdown-item" onclick="showLog()"><span>📋</span> Logfile</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="googleEarth()"><span>🌍</span> Google Earth</div>
+<div class="menu-dropdown-item" onclick="showOnMap()"><span>🗺️</span> Google Maps</div>
+</div>
+
+<div class="menu-dropdown" id="helpMenu">
+<div class="menu-dropdown-item" onclick="showModal('aboutModal')"><span>ℹ️</span> À propos</div>
+<div class="menu-dropdown-item" onclick="showModal('helpModal')"><span>❓</span> Aide<span class="shortcut">F1</span></div>
+<div class="menu-dropdown-item" onclick="showModal('epsgModal')"><span>🔢</span> Codes EPSG</div>
+</div>
+
+<!-- MAIN -->
+<div class="main-container">
+
+<!-- SOURCE -->
+<div class="panel-box source-panel">
+<div class="panel-header">➡️ Système de Coordonnées Source <button class="title-bar-btn" onclick="swapSystems()">🔄</button></div>
+<div class="panel-content">
+<div class="field-row"><label>EPSG-Code:</label><input type="text" id="src_epsg" value="32634"></div>
+<div class="field-row"><label>Area:</label><select id="src_area"></select></div>
+<div class="field-row"><label>Geod. Datum:</label><select id="src_datum"></select></div>
+<div class="radio-group">
+<label class="radio-item"><input type="radio" name="src_type" value="projection" checked onchange="changeSrcType()"> Projection</label>
+<select id="src_projection" style="grid-column:2"></select>
+<label class="radio-item"><input type="radio" name="src_type" value="geodms" onchange="changeSrcType()"> Geographical (DMS)</label>
+<label class="radio-item"><input type="radio" name="src_type" value="geodec" onchange="changeSrcType()"> Geographical (Dec.)</label>
+<label class="radio-item"><input type="radio" name="src_type" value="3dcart" onchange="changeSrcType()"> 3D-Cartesian</label>
+<label class="radio-item"><input type="radio" name="src_type" value="utm" onchange="changeSrcType()"> UTM</label>
+</div>
+<div class="section-box" id="src_plane">
+<div class="section-title">Plane Coordinates [WGS84]</div>
+<div class="field-row"><label>Point-Name:</label><input type="text" id="src_name" value="NoName"></div>
+<div class="field-row"><label>East [m]:</label><input type="number" step="0.0001" id="src_east" value="374987.3650"></div>
+<div class="field-row"><label>North [m]:</label><input type="number" step="0.0001" id="src_north" value="3288986.3530"></div>
+<div class="field-row"><label>Ell.-Height:</label><input type="number" step="0.0001" id="src_height" value="-27.1880"></div>
+</div>
+<div class="section-box" id="src_dms" style="display:none">
+<div class="section-title">Geographical (DMS)</div>
+<div class="field-row"><label>Point-Name:</label><input type="text" id="src_name_dms" value="NoName"></div>
+<div class="field-row"><label>Long. [° ' "]:</label><div class="dms-input"><div class="sign" onclick="toggleSign('src_lon_sign')" id="src_lon_sign">+</div><input type="number" id="src_lon_deg" value="10"><input type="number" id="src_lon_min" value="11"><input type="number" step="0.0001" id="src_lon_sec" value="0.0000"></div></div>
+<div class="field-row"><label>Lat. [° ' "]:</label><div class="dms-input"><div class="sign" onclick="toggleSign('src_lat_sign')" id="src_lat_sign">+</div><input type="number" id="src_lat_deg" value="29"><input type="number" id="src_lat_min" value="43"><input type="number" step="0.0001" id="src_lat_sec" value="33.2457"></div></div>
+<div class="field-row"><label>Ell. Height:</label><input type="number" step="0.0001" id="src_height_dms" value="-27.1880"></div>
+</div>
+<div class="section-box" id="src_dec" style="display:none">
+<div class="section-title">Geographical (Decimal)</div>
+<div class="field-row"><label>Point-Name:</label><input type="text" id="src_name_dec" value="NoName"></div>
+<div class="field-row"><label>Long. (°):</label><input type="number" step="0.0000001" id="src_lon_dec" value="10.1833333"></div>
+<div class="field-row"><label>Lat. (°):</label><input type="number" step="0.0000001" id="src_lat_dec" value="29.7259016"></div>
+<div class="field-row"><label>Ell. Height:</label><input type="number" step="0.0001" id="src_height_dec" value="-27.1880"></div>
+</div>
+<button class="action-btn" onclick="performTransform()">▶ Start Calculation</button>
+<button class="action-btn action-btn-secondary" onclick="newInput()">📝 New Input</button>
+<div class="field-row" style="margin-top:10px"><label>Number:</label><input type="number" id="src_number" value="0"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">
+<button class="action-btn action-btn-secondary" onclick="printPage()">🖨️ Print File...</button>
+<label class="checkbox-row"><input type="checkbox" id="src_viewfile"> View File</label>
+</div>
+<div class="footer-path">📁 C:\\SubTopo\\Transform\\DATA</div>
+</div></div>
+
+<!-- CENTER -->
+<div class="panel-box center-panel">
+<div class="panel-header">⚙️ Transform</div>
+<div class="panel-content">
+<button class="transform-center" onclick="performTransform()">➡️ TRANSFORM ➡️</button>
+<div class="section-box">
+<div class="section-title">7-Parameter</div>
+<select id="param_preset" onchange="loadParamPreset()"></select>
+<div style="margin-top:10px">
+<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:#333">3D-Datum-Shift:</div>
+<div class="field-row"><label>X0:</label><input type="number" step="0.001" id="param_x0" value="0.000"></div>
+<div class="field-row"><label>Y0:</label><input type="number" step="0.001" id="param_y0" value="0.000"></div>
+<div class="field-row"><label>Z0:</label><input type="number" step="0.001" id="param_z0" value="0.000"></div>
+<div class="field-row"><label>ex:</label><input type="number" step="0.000001" id="param_ex" value="0.000000"></div>
+<div class="field-row"><label>ey:</label><input type="number" step="0.000001" id="param_ey" value="0.000000"></div>
+<div class="field-row"><label>ez:</label><input type="number" step="0.000001" id="param_ez" value="0.000000"></div>
+<div class="field-row"><label>m:</label><input type="number" step="0.0001" id="param_m" value="0.0000"></div>
+</div>
+<label class="checkbox-row"><input type="checkbox" id="param_inverse"> Inverse Parameter</label>
+<label class="checkbox-row"><input type="checkbox" id="param_user" checked> User defined 7P</label>
+<button class="action-btn action-btn-secondary" onclick="showModal('sevenParamModal')">📋 Select 7-Parameter</button>
+</div>
+<div class="section-box">
+<div class="section-title">Grid-Datum-Shift (NTv2)</div>
+<select id="grid_shift"><option value="none" selected>None</option><option value="france">France (NTF)</option></select>
+</div>
+<div class="section-box">
+<div class="section-title">🌐 Geoidmodel</div>
+<select id="geoid_model"><option value="EGM2008" selected>EGM2008</option><option value="EGM96">EGM96</option><option value="None">None</option></select>
+<button class="action-btn action-btn-secondary" onclick="showModal('geoidModal')" style="margin-top:8px">📐 Select Geoidmodel</button>
+<div style="margin-top:8px;font-size:11px;color:#2d5e3d;font-weight:700">Height-Shift: <span id="height_shift">0.000 m</span></div>
+</div>
+</div></div>
+
+<!-- TARGET -->
+<div class="panel-box target-panel">
+<div class="panel-header">Système de Coordonnées Cible ⬅️</div>
+<div class="panel-content">
+<div class="field-row"><label>EPSG-Code:</label><input type="text" id="tgt_epsg" value="4326"></div>
+<div class="field-row"><label>Area:</label><select id="tgt_area"></select></div>
+<div class="field-row"><label>Geod. Datum:</label><select id="tgt_datum"></select></div>
+<div class="radio-group">
+<label class="radio-item"><input type="radio" name="tgt_type" value="projection" onchange="changeTgtType()"> Projection</label>
+<select id="tgt_projection" style="grid-column:2"></select>
+<label class="radio-item"><input type="radio" name="tgt_type" value="geodms" checked onchange="changeTgtType()"> Geographical (DMS)</label>
+<label class="radio-item"><input type="radio" name="tgt_type" value="geodec" onchange="changeTgtType()"> Geographical (Dec.)</label>
+<label class="radio-item"><input type="radio" name="tgt_type" value="3dcart" onchange="changeTgtType()"> 3D-Cartesian</label>
+<label class="radio-item"><input type="radio" name="tgt_type" value="utm" onchange="changeTgtType()"> UTM</label>
+</div>
+<div class="section-box" id="tgt_dms_box">
+<div class="section-title">Geographical Coordinates [WGS84]</div>
+<div class="field-row"><label>Point-Name:</label><input type="text" id="tgt_name" value="NoName" readonly></div>
+<div class="field-row"><label>Long. [° ' "]:</label><div class="dms-input"><div class="sign result-input" id="tgt_lon_sign">+</div><input type="text" id="tgt_lon_deg" readonly class="result-input"><input type="text" id="tgt_lon_min" readonly class="result-input"><input type="text" id="tgt_lon_sec" readonly class="result-input"></div></div>
+<div class="field-row"><label>Lat. [° ' "]:</label><div class="dms-input"><div class="sign result-input" id="tgt_lat_sign">+</div><input type="text" id="tgt_lat_deg" readonly class="result-input"><input type="text" id="tgt_lat_min" readonly class="result-input"><input type="text" id="tgt_lat_sec" readonly class="result-input"></div></div>
+<div class="field-row"><label>Ell. Height:</label><input type="text" id="tgt_height_dms" readonly class="result-input"></div>
+</div>
+<div class="section-box" id="tgt_dec_box" style="display:none">
+<div class="section-title">Decimal Coordinates</div>
+<div class="field-row"><label>Long. (°):</label><input type="text" id="tgt_lon_dec" readonly class="result-input"></div>
+<div class="field-row"><label>Lat. (°):</label><input type="text" id="tgt_lat_dec" readonly class="result-input"></div>
+<div class="field-row"><label>Ell. Height:</label><input type="text" id="tgt_height_dec" readonly class="result-input"></div>
+</div>
+<div class="section-box" id="tgt_plane_box" style="display:none">
+<div class="section-title">Plane Coordinates</div>
+<div class="field-row"><label>East [m]:</label><input type="text" id="tgt_east" readonly class="result-input"></div>
+<div class="field-row"><label>North [m]:</label><input type="text" id="tgt_north" readonly class="result-input"></div>
+<div class="field-row"><label>Ell. Height:</label><input type="text" id="tgt_height_plane" readonly class="result-input"></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">
+<button class="action-btn action-btn-secondary" onclick="googleEarth()">🌍 Google Earth</button>
+<button class="action-btn action-btn-secondary" onclick="showOnMap()">🗺️ Karte</button>
+</div>
+<div class="field-row" style="margin-top:10px"><label>Number:</label><input type="number" id="tgt_number" value="0"></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">
+<button class="action-btn action-btn-secondary" onclick="printPage()">🖨️ Print File...</button>
+<label class="checkbox-row"><input type="checkbox" id="tgt_viewfile"> View File</label>
+</div>
+<div class="footer-path">📁 C:\\SubTopo\\Transform\\DATA</div>
+</div></div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="aboutModal"><div class="modal-box"><div class="modal-header"><span>ℹ️ À propos</span><button class="modal-close" onclick="closeModal('aboutModal')">✕</button></div><div class="modal-content"><div style="text-align:center"><div style="width:100px;height:100px;margin:20px auto;background:#fff;border-radius:12px;padding:10px"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div><h2 style="color:#10b981">SubTopo Transform v4.0</h2><p style="margin:10px 0">Convertisseur de Coordonnées Professionnel</p><p style="margin-top:20px;font-weight:700;color:#2d5e3d">Developed by NASRAOUI FATHI<br>© 2025 SubTopo Engineering</p></div></div><div class="modal-footer"><button class="action-btn" onclick="closeModal('aboutModal')" style="width:auto;padding:8px 20px">✅ OK</button></div></div></div>
+
+<div class="modal-overlay" id="helpModal"><div class="modal-box"><div class="modal-header"><span>❓ Aide</span><button class="modal-close" onclick="closeModal('helpModal')">✕</button></div><div class="modal-content"><div class="help-section"><h3>🎯 Utilisation</h3><ul><li>1. Choisir EPSG Source + Datum + Coordonnées</li><li>2. Choisir EPSG Cible + Format</li><li>3. Cliquer TRANSFORM</li></ul><h3 style="margin-top:20px">🇹🇳 Tunisie (Clarke 1880)</h3><ul><li>Carthage UTM 32N: EPSG 22332</li><li>NTT: EPSG 22391 | STT: EPSG 22392</li></ul><h3 style="margin-top:20px">⌨️ Raccourcis</h3><ul><li>Ctrl+N/O/S/P | F5: Transform | F1: Aide | Esc: Fermer</li></ul></div></div><div class="modal-footer"><button class="action-btn" onclick="closeModal('helpModal')" style="width:auto;padding:8px 20px">✅ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="sevenParamModal"><div class="modal-box"><div class="modal-header"><span>⚙️ 7-Paramètres</span><button class="modal-close" onclick="closeModal('sevenParamModal')">✕</button></div><div class="modal-content"><div class="modal-section"><table class="data-table"><thead><tr><th>Preset</th><th>ΔX</th><th>ΔY</th><th>ΔZ</th><th>Action</th></tr></thead><tbody id="paramTableBody"></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('sevenParamModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="epsgModal"><div class="modal-box"><div class="modal-header"><span>🔢 Catalogue EPSG</span><button class="modal-close" onclick="closeModal('epsgModal')">✕</button></div><div class="modal-content"><div class="modal-section"><input type="text" id="epsg_search" placeholder="🔍 Rechercher (ex: tunisia, utm 34, 4326)..." oninput="filterEPSG()" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;margin-bottom:10px"><table class="data-table"><thead><tr><th>EPSG</th><th>Description</th><th>Action</th></tr></thead><tbody id="epsg_tbody"></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('epsgModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="logfileModal"><div class="modal-box"><div class="modal-header"><span>📋 Logfile</span><button class="modal-close" onclick="closeModal('logfileModal')">✕</button></div><div class="modal-content"><div class="modal-section"><div class="log-display" id="logfile_content">[Aucune entrée]</div><div style="margin-top:10px;display:flex;gap:8px"><button class="action-btn" onclick="exportLog()" style="width:auto;padding:6px 12px">💾 Exporter</button><button class="action-btn action-btn-secondary" onclick="clearLog()" style="width:auto;padding:6px 12px">🗑️ Effacer</button></div></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('logfileModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="datumModal"><div class="modal-box"><div class="modal-header"><span>🗺️ Datums</span><button class="modal-close" onclick="closeModal('datumModal')">✕</button></div><div class="modal-content"><div class="modal-section"><table class="data-table"><thead><tr><th>Datum</th><th>Ellipsoïde</th><th>Région</th></tr></thead><tbody id="datumTableBody"></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('datumModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="geoidModal"><div class="modal-box"><div class="modal-header"><span>🌍 Géoïde</span><button class="modal-close" onclick="closeModal('geoidModal')">✕</button></div><div class="modal-content"><div class="modal-section"><table class="data-table"><thead><tr><th>Modèle</th><th>Précision</th><th>Action</th></tr></thead><tbody><tr><td>EGM2008</td><td>±10 cm</td><td><button class="action-btn" onclick="selectGeoidModel('EGM2008')" style="width:auto;padding:4px;font-size:10px">Choisir</button></td></tr><tr><td>EGM96</td><td>±50 cm</td><td><button class="action-btn" onclick="selectGeoidModel('EGM96')" style="width:auto;padding:4px;font-size:10px">Choisir</button></td></tr></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('geoidModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="settingsModal"><div class="modal-box"><div class="modal-header"><span>⚙️ Paramètres</span><button class="modal-close" onclick="closeModal('settingsModal')">✕</button></div><div class="modal-content"><div class="modal-section"><h3>🌍 Langue</h3><select id="setting_lang" style="width:100%;padding:8px"><option value="fr">🇫🇷 Français</option><option value="en">🇬🇧 English</option><option value="ar">🇸🇦 العربية</option></select></div></div><div class="modal-footer"><button class="action-btn" onclick="saveSettings()" style="width:auto;padding:8px 20px">💾 OK</button><button class="action-btn action-btn-secondary" onclick="closeModal('settingsModal')" style="width:auto;padding:8px 20px">✖ Annuler</button></div></div></div>
+
+<div class="modal-overlay" id="utmFinderModal"><div class="modal-box"><div class="modal-header"><span>📍 Zone UTM</span><button class="modal-close" onclick="closeModal('utmFinderModal')">✕</button></div><div class="modal-content"><div class="modal-section"><div class="field-row"><label>Lon:</label><input type="number" id="utm_lon" step="0.0001" placeholder="10.18"></div><div class="field-row"><label>Lat:</label><input type="number" id="utm_lat" step="0.0001" placeholder="36.80"></div><button class="action-btn" onclick="findUTMZone()">🔍 Trouver</button><div id="utm_result" style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:4px;display:none"></div></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('utmFinderModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="formatConverterModal"><div class="modal-box"><div class="modal-header"><span>🔄 Convertisseur</span><button class="modal-close" onclick="closeModal('formatConverterModal')">✕</button></div><div class="modal-content"><div class="modal-section"><h3>DMS ↔ Décimal</h3><div class="field-row"><label>Deg:</label><input type="number" id="conv_deg"></div><div class="field-row"><label>Min:</label><input type="number" id="conv_min"></div><div class="field-row"><label>Sec:</label><input type="number" step="0.0001" id="conv_sec"></div><button class="action-btn" onclick="convertDMStoDec()">→ Décimal</button><div class="field-row" style="margin-top:10px"><label>Décimal:</label><input type="number" step="0.0000001" id="conv_dec"></div><button class="action-btn" onclick="convertDecToDMS()">→ DMS</button></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('formatConverterModal')" style="width:auto;padding:8px 20px">✖ Fermer</button></div></div></div>
+
+<!-- FOOTER -->
+<footer class="app-footer">
+<div class="footer-content">
+<div class="footer-left">
+<div class="footer-logo-box"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div>
+<div><div class="footer-company-name">SubTopo Engineering</div><div class="footer-tagline">Topographic Solutions © 2025</div></div>
+</div>
+<div class="footer-center">
+<div class="footer-developed-by">✦ Conçu et développé par ✦</div>
+<div class="footer-author-name">NASRAOUI FATHI</div>
+</div>
+<div class="footer-right">
+<div class="footer-version-label">Version</div>
+<div class="footer-version-number">v4.0</div>
+<div class="footer-app-name">Coordinate Converter Pro</div>
+</div>
+</div>
+<div class="footer-bottom">🌍 FR/EN/AR • 🇹🇳 Tunisie • 🇩🇿 Algérie • 🇲🇦 Maroc • 📐 Clarke 1880 IGN • UTM 1-60 N/S</div>
+</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATA ============
+var AREAS = [
+  {v:'World',t:'🌍 World'},{v:'Europe',t:'🇪🇺 Europe'},{v:'Africa',t:'🌍 Africa'},
+  {v:'Tunisia',t:'🇹🇳 Tunisie'},{v:'Algeria',t:'🇩🇿 Algérie'},{v:'Morocco',t:'🇲🇦 Maroc'},
+  {v:'Egypt',t:'🇪🇬 Égypte'},{v:'Libya',t:'🇱🇾 Libye'},{v:'SaudiArabia',t:'🇸🇦 Arabie Saoudite'},
+  {v:'Asia',t:'🌏 Asia'},{v:'America',t:'🌎 America'},{v:'Oceania',t:'🌏 Oceania'},
+  {v:'Russia',t:'🇷🇺 Russie'},{v:'China',t:'🇨🇳 Chine'},{v:'India',t:'🇮🇳 Inde'},
+  {v:'Japan',t:'🇯🇵 Japon'},{v:'Brazil',t:'🇧🇷 Brésil'},{v:'UK',t:'🇬🇧 UK'},
+  {v:'Australia',t:'🇦🇺 Australie'}
+];
+
+var DATUMS = [
+  {v:'WGS84',t:'WGS84 (WGS84)',e:'WGS84',r:'Mondial'},
+  {v:'ITRF2014',t:'ITRF2014',e:'GRS80',r:'Mondial'},
+  {v:'ED50',t:'ED50 (International 1924)',e:'International 1924',r:'Europe'},
+  {v:'ETRS89',t:'ETRS89 (GRS80)',e:'GRS80',r:'Europe'},
+  {v:'RGF93',t:'RGF93 (France)',e:'GRS80',r:'France'},
+  {v:'NAD83',t:'NAD83 (GRS80)',e:'GRS80',r:'Amérique du Nord'},
+  {v:'NAD27',t:'NAD27 (Clarke 1866)',e:'Clarke 1866',r:'Amérique du Nord'},
+  {v:'SIRGAS2000',t:'SIRGAS2000',e:'GRS80',r:'Amérique du Sud'},
+  {v:'SAD69',t:'SAD69',e:'GRS67',r:'Brésil'},
+  {v:'Carthage',t:'🇹🇳 Carthage (Clarke 1880 IGN)',e:'Clarke 1880 IGN',r:'Tunisie'},
+  {v:'IGN_Tunisia',t:'🇹🇳 IGN Tunisie (Clarke 1880)',e:'Clarke 1880',r:'Tunisie'},
+  {v:'Nord_Sahara',t:'🇩🇿 Nord Sahara 1959 (Clarke 1880)',e:'Clarke 1880',r:'Algérie'},
+  {v:'Merchich',t:'🇲🇦 Merchich (Clarke 1880)',e:'Clarke 1880',r:'Maroc'},
+  {v:'Egypt1907',t:'🇪🇬 Egypt 1907',e:'Helmert 1906',r:'Égypte'},
+  {v:'AinElAbd',t:'🇸🇦 Ain el Abd 1970',e:'International 1924',r:'Arabie'},
+  {v:'Tokyo',t:'🇯🇵 Tokyo Datum',e:'Bessel 1841',r:'Japon'},
+  {v:'Beijing1954',t:'🇨🇳 Beijing 1954',e:'Krassowsky 1940',r:'Chine'},
+  {v:'CGCS2000',t:'🇨🇳 CGCS2000',e:'GRS80',r:'Chine'},
+  {v:'Indian1975',t:'🇮🇳 Indian 1975',e:'Everest 1830',r:'Inde'},
+  {v:'Pulkovo1942',t:'🇷🇺 Pulkovo 1942',e:'Krassowsky 1940',r:'Russie'},
+  {v:'OSGB36',t:'🇬🇧 OSGB36',e:'Airy 1830',r:'UK'},
+  {v:'GDA94',t:'🇦🇺 GDA94',e:'GRS80',r:'Australie'},
+  {v:'GDA2020',t:'🇦🇺 GDA2020',e:'GRS80',r:'Australie'}
+];
+
+var PARAM_PRESETS = [
+  {v:'null',t:'Null-Parameter',x:0,y:0,z:0},
+  {v:'ed50_wgs84',t:'ED50 → WGS84 (Europe)',x:-87,y:-98,z:-121},
+  {v:'nad27_wgs84',t:'NAD27 → WGS84 (USA)',x:-8,y:160,z:176},
+  {v:'carthage_wgs84',t:'🇹🇳 Carthage → WGS84',x:-263,y:6,z:431},
+  {v:'ign_tunisia_wgs84',t:'🇹🇳 IGN Tunisie → WGS84',x:-263,y:6,z:431},
+  {v:'nord_sahara_wgs84',t:'🇩🇿 Nord Sahara → WGS84',x:-186,y:-93,z:310},
+  {v:'merchich_wgs84',t:'🇲🇦 Merchich → WGS84',x:31,y:146,z:47},
+  {v:'egypt_wgs84',t:'🇪🇬 Egypt 1907 → WGS84',x:-130,y:110,z:-13},
+  {v:'ain_wgs84',t:'🇸🇦 Ain el Abd → WGS84',x:-143,y:-236,z:7},
+  {v:'tokyo_wgs84',t:'🇯🇵 Tokyo → WGS84',x:-148,y:507,z:685},
+  {v:'pulkovo_wgs84',t:'🇷🇺 Pulkovo → WGS84',x:23,y:-141,z:-80},
+  {v:'osgb_wgs84',t:'🇬🇧 OSGB36 → WGS84',x:446,y:-125,z:542},
+  {v:'indian_wgs84',t:'🇮🇳 Indian → WGS84',x:295,y:736,z:257},
+  {v:'beijing_wgs84',t:'🇨🇳 Beijing → WGS84',x:15,y:-115,z:-83},
+  {v:'sad69_wgs84',t:'🇧🇷 SAD69 → WGS84',x:-66,y:-3,z:-45},
+  {v:'custom',t:'⚙️ Custom (Personnalisé)',x:0,y:0,z:0}
+];
+
+var EPSG_CATALOG = [
+  {c:4326,d:'WGS84 (Geographic)'},
+  {c:4258,d:'ETRS89 (Geographic)'},
+  {c:4230,d:'ED50 (Geographic)'},
+  {c:4269,d:'NAD83 (Geographic)'},
+  {c:22332,d:'🇹🇳 Carthage / UTM Zone 32N'},
+  {c:22391,d:'🇹🇳 Carthage / Nord Tunisie (NTT)'},
+  {c:22392,d:'🇹🇳 Carthage / Sud Tunisie (STT)'},
+  {c:30491,d:'🇩🇿 Nord Sahara / Nord Algérie'},
+  {c:30492,d:'🇩🇿 Nord Sahara / Sud Algérie'},
+  {c:26191,d:'🇲🇦 Merchich / Maroc Zone 1'},
+  {c:2154,d:'🇫🇷 RGF93 / Lambert-93'},
+  {c:27700,d:'🇬🇧 OSGB36 / British National Grid'}
+];
+
+// Ajouter toutes les zones UTM 1-60 N et S
+for (var z = 1; z <= 60; z++) {
+  EPSG_CATALOG.push({c: 32600 + z, d: 'WGS84 / UTM Zone ' + z + 'N'});
+}
+for (var z = 1; z <= 60; z++) {
+  EPSG_CATALOG.push({c: 32700 + z, d: 'WGS84 / UTM Zone ' + z + 'S'});
+}
+
+// ============ PROJ4 DEFS ============
+function getProjDef(epsg) {
+  var e = parseInt(epsg);
+  // UTM Nord (32601-32660)
+  if (e >= 32601 && e <= 32660) {
+    return '+proj=utm +zone=' + (e - 32600) + ' +datum=WGS84 +units=m +no_defs';
+  }
+  // UTM Sud (32701-32760)
+  if (e >= 32701 && e <= 32760) {
+    return '+proj=utm +zone=' + (e - 32700) + ' +south +datum=WGS84 +units=m +no_defs';
+  }
+  var defs = {
+    '4326': '+proj=longlat +datum=WGS84 +no_defs',
+    '4258': '+proj=longlat +ellps=GRS80 +no_defs',
+    '4230': '+proj=longlat +ellps=intl +no_defs',
+    '4269': '+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs',
+    '22332': '+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs',
+    '22391': '+proj=lcc +lat_1=36 +lat_0=36 +lon_0=10 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs',
+    '22392': '+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=10 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs',
+    '30491': '+proj=lcc +lat_1=36 +lat_0=36 +lon_0=2.7 +k_0=0.999625544 +x_0=500135 +y_0=300090 +ellps=clrk80ign +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs',
+    '30492': '+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=2.7 +k_0=0.999625769 +x_0=500135 +y_0=300090 +ellps=clrk80ign +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs',
+    '26191': '+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs',
+    '2154': '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs',
+    '27700': '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs'
+  };
+  return defs[String(e)] || '+proj=longlat +datum=WGS84 +no_defs';
+}
+
+// ============ APP ============
+var currentLang = localStorage.getItem('transform_lang') || 'fr';
+var transformationLog = JSON.parse(localStorage.getItem('transform_log') || '[]');
+var copiedData = null;
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('transform_lang', lang);
+  document.getElementById('htmlRoot').setAttribute('lang', lang);
+  document.body.classList.toggle('rtl', lang === 'ar');
+  document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.lang === lang); });
+}
+
+function tryLogin() {
+  var input = document.getElementById('pwdInput');
+  var err = document.getElementById('pwdError');
+  if (input.value.trim() === 'Subtopo@2025') {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('appContainer').classList.add('visible');
+    err.textContent = '';
+    setTimeout(function() { toast('✅ Bienvenue !'); }, 300);
+  } else {
+    err.textContent = '❌ Mot de passe incorrect';
+    input.value = '';
+    setTimeout(function() { err.textContent = ''; }, 3000);
+  }
+}
+
+function logout() {
+  if (confirm('Quitter ?')) {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('appContainer').classList.remove('visible');
+    closeAllMenus(); closeAllModals();
+  }
+}
+
+function toast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2000);
+}
+
+function toggleMenu(menuId, element) {
+  var wasOpen = document.getElementById(menuId).classList.contains('show');
+  closeAllMenus();
+  if (!wasOpen) {
+    var menu = document.getElementById(menuId);
+    var rect = element.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 2) + 'px';
+    menu.style.left = rect.left + 'px';
+    menu.classList.add('show');
+  }
+}
+function closeAllMenus() { document.querySelectorAll('.menu-dropdown').forEach(function(m) { m.classList.remove('show'); }); }
+document.addEventListener('click', function(e) { if (!e.target.closest('.menu-item') && !e.target.closest('.menu-dropdown')) closeAllMenus(); });
+function showModal(id) { document.getElementById(id).classList.add('show'); closeAllMenus(); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function closeAllModals() { document.querySelectorAll('.modal-overlay').forEach(function(m) { m.classList.remove('show'); }); }
+
+function changeSrcType() {
+  var type = document.querySelector('input[name="src_type"]:checked').value;
+  document.getElementById('src_plane').style.display = (type === 'projection' || type === 'utm') ? 'block' : 'none';
+  document.getElementById('src_dms').style.display = type === 'geodms' ? 'block' : 'none';
+  document.getElementById('src_dec').style.display = type === 'geodec' ? 'block' : 'none';
+}
+function changeTgtType() {
+  var type = document.querySelector('input[name="tgt_type"]:checked').value;
+  document.getElementById('tgt_plane_box').style.display = (type === 'projection' || type === 'utm') ? 'block' : 'none';
+  document.getElementById('tgt_dms_box').style.display = type === 'geodms' ? 'block' : 'none';
+  document.getElementById('tgt_dec_box').style.display = type === 'geodec' ? 'block' : 'none';
+}
+function toggleSign(id) {
+  var el = document.getElementById(id);
+  el.textContent = el.textContent === '+' ? '-' : '+';
+}
+
+function performTransform() {
+  try {
+    var srcEpsg = document.getElementById('src_epsg').value;
+    var tgtEpsg = document.getElementById('tgt_epsg').value;
+    proj4.defs('EPSG:' + srcEpsg, getProjDef(srcEpsg));
+    proj4.defs('EPSG:' + tgtEpsg, getProjDef(tgtEpsg));
+    var srcCoords, srcType = document.querySelector('input[name="src_type"]:checked').value;
+    if (srcType === 'projection' || srcType === 'utm') {
+      var east = parseFloat(document.getElementById('src_east').value);
+      var north = parseFloat(document.getElementById('src_north').value);
+      if (isNaN(east) || isNaN(north)) { toast('❌ Saisir East/North'); return; }
+      srcCoords = [east, north];
+    } else if (srcType === 'geodms') {
+      var lonSign = document.getElementById('src_lon_sign').textContent === '-' ? -1 : 1;
+      var latSign = document.getElementById('src_lat_sign').textContent === '-' ? -1 : 1;
+      var lon = lonSign * (parseFloat(document.getElementById('src_lon_deg').value || 0) + parseFloat(document.getElementById('src_lon_min').value || 0)/60 + parseFloat(document.getElementById('src_lon_sec').value || 0)/3600);
+      var lat = latSign * (parseFloat(document.getElementById('src_lat_deg').value || 0) + parseFloat(document.getElementById('src_lat_min').value || 0)/60 + parseFloat(document.getElementById('src_lat_sec').value || 0)/3600);
+      srcCoords = [lon, lat];
+    } else if (srcType === 'geodec') {
+      srcCoords = [parseFloat(document.getElementById('src_lon_dec').value), parseFloat(document.getElementById('src_lat_dec').value)];
+    }
+    var result = proj4('EPSG:' + srcEpsg, 'EPSG:' + tgtEpsg, srcCoords);
+    var height = parseFloat(document.getElementById('src_height').value) || 0;
+    var tgtType = document.querySelector('input[name="tgt_type"]:checked').value;
+    if (tgtType === 'projection' || tgtType === 'utm') {
+      document.getElementById('tgt_east').value = result[0].toFixed(4);
+      document.getElementById('tgt_north').value = result[1].toFixed(4);
+      document.getElementById('tgt_height_plane').value = height.toFixed(4);
+    } else if (tgtType === 'geodms') {
+      var lonAbs = Math.abs(result[0]), latAbs = Math.abs(result[1]);
+      var lonDeg = Math.floor(lonAbs), lonMin = Math.floor((lonAbs-lonDeg)*60), lonSec = ((lonAbs-lonDeg)*60-lonMin)*60;
+      var latDeg = Math.floor(latAbs), latMin = Math.floor((latAbs-latDeg)*60), latSec = ((latAbs-latDeg)*60-latMin)*60;
+      document.getElementById('tgt_lon_sign').textContent = result[0]>=0?'+':'-';
+      document.getElementById('tgt_lon_deg').value = lonDeg;
+      document.getElementById('tgt_lon_min').value = lonMin;
+      document.getElementById('tgt_lon_sec').value = lonSec.toFixed(5);
+      document.getElementById('tgt_lat_sign').textContent = result[1]>=0?'+':'-';
+      document.getElementById('tgt_lat_deg').value = latDeg;
+      document.getElementById('tgt_lat_min').value = latMin;
+      document.getElementById('tgt_lat_sec').value = latSec.toFixed(5);
+      document.getElementById('tgt_height_dms').value = height.toFixed(4);
+    } else if (tgtType === 'geodec') {
+      document.getElementById('tgt_lon_dec').value = result[0].toFixed(7);
+      document.getElementById('tgt_lat_dec').value = result[1].toFixed(7);
+      document.getElementById('tgt_height_dec').value = height.toFixed(4);
+    }
+    addToLog('TRANSFORM','EPSG:'+srcEpsg+' → EPSG:'+tgtEpsg, srcCoords[0].toFixed(4)+', '+srcCoords[1].toFixed(4)+' → '+result[0].toFixed(4)+', '+result[1].toFixed(4));
+    toast('✅ Transformation réussie');
+  } catch(e) {
+    addToLog('ERROR','Transform',e.message);
+    toast('❌ Erreur: ' + e.message);
+  }
+}
+
+function addToLog(action,params,result) {
+  transformationLog.unshift({date:new Date().toISOString(),action:action,params:params,result:result});
+  if (transformationLog.length > 100) transformationLog = transformationLog.slice(0,100);
+  localStorage.setItem('transform_log', JSON.stringify(transformationLog));
+}
+function updateLogDisplay() {
+  var el = document.getElementById('logfile_content');
+  if (!transformationLog.length) { el.textContent = '[Aucune entrée]'; return; }
+  el.textContent = transformationLog.map(function(e) { return '['+new Date(e.date).toLocaleString('fr-FR')+'] '+e.action+' | '+e.params+' | '+e.result; }).join('\n');
+}
+function showLog() { showModal('logfileModal'); updateLogDisplay(); }
+function showLogfile() { showLog(); }
+function exportLog() {
+  var c = 'SubTopo Transform LOG\n\n';
+  transformationLog.forEach(function(e) { c+='['+new Date(e.date).toLocaleString('fr-FR')+'] '+e.action+'\n  '+e.params+'\n  '+e.result+'\n\n'; });
+  downloadFile(c,'transform-log.txt','text/plain'); toast('✅ Log exporté');
+}
+function clearLog() { if (!confirm('Effacer ?')) return; transformationLog=[]; localStorage.removeItem('transform_log'); updateLogDisplay(); }
+
+function newFile() { if(confirm('Nouveau ?')) { newInput(); toast('📄 Nouveau'); } closeAllMenus(); }
+function newInput() { document.querySelectorAll('.panel-content input').forEach(function(i) { if(!i.readOnly) i.value=''; }); }
+function openFile() {
+  var input = document.getElementById('fileOpen'); input.click();
+  input.onchange = function(e) {
+    var file = e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try { var data=JSON.parse(ev.target.result); Object.keys(data).forEach(function(key) { var el=document.getElementById(key); if(el) el.value=data[key]; }); toast('✅ Chargé'); }
+      catch(err) { toast('❌ Erreur'); }
+    };
+    reader.readAsText(file);
+  };
+  closeAllMenus();
+}
+function saveFile() {
+  var data = {};
+  document.querySelectorAll('.panel-content input,.panel-content select').forEach(function(i) { if(i.id) data[i.id]=i.value; });
+  downloadFile(JSON.stringify(data,null,2),'subtopo-project.json','application/json');
+  toast('✅ Sauvegardé'); closeAllMenus();
+}
+function importFile() {
+  var input = document.getElementById('fileImport'); input.click();
+  input.onchange = function(e) {
+    var file = e.target.files[0]; if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      var lines = ev.target.result.split('\n').filter(function(l) { return l.trim(); });
+      var dataLine = lines.find(function(l) { return /[\d.-]/.test(l); });
+      if (dataLine) {
+        var parts = dataLine.split(/[,;\s\t]+/).filter(function(p) { return p; });
+        if (parts.length >= 2) {
+          document.getElementById('src_east').value = parts[0];
+          document.getElementById('src_north').value = parts[1];
+          if (parts[2]) document.getElementById('src_height').value = parts[2];
+          toast('✅ Importé');
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+  closeAllMenus();
+}
+function printPage() { window.print(); closeAllMenus(); }
+function sortPoints() { toast('↕️ Trié'); }
+function showDF() { showModal('epsgModal'); }
+function showGeo() { document.querySelector('input[name="tgt_type"][value="geodms"]').checked=true; changeTgtType(); }
+function showUTM() { document.querySelector('input[name="tgt_type"][value="utm"]').checked=true; changeTgtType(); }
+function swapSystems() {
+  ['epsg','area','datum','projection'].forEach(function(f) {
+    var src=document.getElementById('src_'+f), tgt=document.getElementById('tgt_'+f);
+    if(src&&tgt) { var t=src.value; src.value=tgt.value; tgt.value=t; }
+  });
+  toast('🔄 Échangé');
+}
+function resetAll() { if(!confirm('Reset ?')) return; document.querySelectorAll('input').forEach(function(i) { if(!i.readOnly) i.value=''; }); toast('🔁 Reset'); }
+function copySource() { copiedData={}; ['src_epsg','src_east','src_north','src_height'].forEach(function(id) { copiedData[id]=document.getElementById(id).value; }); toast('📋 Copié'); closeAllMenus(); }
+function pasteSource() { if(!copiedData) { toast('❌'); return; } Object.keys(copiedData).forEach(function(id) { var el=document.getElementById(id); if(el) el.value=copiedData[id]; }); toast('✅ Collé'); closeAllMenus(); }
+function clearAllFields() { if(!confirm('Effacer ?')) return; document.querySelectorAll('input').forEach(function(i) { if(!i.readOnly&&i.type!=='password') i.value=''; }); closeAllMenus(); }
+function loadDefaultTunisia() { document.getElementById('src_epsg').value='22332'; document.getElementById('src_east').value='500000'; document.getElementById('src_north').value='3700000'; toast('🇹🇳 Tunisie'); closeAllMenus(); }
+function loadDefaultAlgeria() { document.getElementById('src_epsg').value='30491'; toast('🇩🇿 Algérie'); closeAllMenus(); }
+function batchTransform() { importFile(); }
+function inverseTransform() { swapSystems(); performTransform(); closeAllMenus(); }
+
+function selectEPSG(epsg, target) { document.getElementById(target+'_epsg').value=epsg; closeModal('epsgModal'); toast('✅ EPSG '+epsg); }
+function filterEPSG() {
+  var search = document.getElementById('epsg_search').value.toLowerCase();
+  document.querySelectorAll('#epsg_tbody tr').forEach(function(row) { row.style.display = row.textContent.toLowerCase().includes(search)?'':'none'; });
+}
+function loadPreset(preset) {
+  var p = PARAM_PRESETS.find(function(pp) { return pp.v === preset; });
+  if(p) {
+    document.getElementById('param_x0').value=p.x;
+    document.getElementById('param_y0').value=p.y;
+    document.getElementById('param_z0').value=p.z;
+    document.getElementById('param_ex').value=0;
+    document.getElementById('param_ey').value=0;
+    document.getElementById('param_ez').value=0;
+    document.getElementById('param_m').value=0;
+    closeModal('sevenParamModal');
+    toast('✅ Preset chargé');
+  }
+}
+function loadParamPreset() { var v=document.getElementById('param_preset').value; if(v!=='custom') loadPreset(v); }
+function selectGeoidModel(model) { document.getElementById('geoid_model').value=model; closeModal('geoidModal'); toast('✅ '+model); }
+function findUTMZone() {
+  var lon=parseFloat(document.getElementById('utm_lon').value), lat=parseFloat(document.getElementById('utm_lat').value);
+  if(isNaN(lon)||isNaN(lat)) { toast('❌'); return; }
+  var zone=Math.floor((lon+180)/6)+1, hem=lat>=0?'N':'S', epsg=lat>=0?32600+zone:32700+zone;
+  document.getElementById('utm_result').style.display='block';
+  document.getElementById('utm_result').innerHTML='<b>Zone:</b> '+zone+hem+'<br><b>EPSG:</b> '+epsg;
+}
+function convertDMStoDec() {
+  var d=parseFloat(document.getElementById('conv_deg').value)||0, m=parseFloat(document.getElementById('conv_min').value)||0, s=parseFloat(document.getElementById('conv_sec').value)||0;
+  document.getElementById('conv_dec').value=(d+m/60+s/3600).toFixed(7);
+}
+function convertDecToDMS() {
+  var dec=parseFloat(document.getElementById('conv_dec').value); if(isNaN(dec)) return;
+  var abs=Math.abs(dec), d=Math.floor(abs), m=Math.floor((abs-d)*60), s=((abs-d)*60-m)*60;
+  document.getElementById('conv_deg').value=d; document.getElementById('conv_min').value=m; document.getElementById('conv_sec').value=s.toFixed(4);
+}
+function googleEarth() { var lon=document.getElementById('tgt_lon_dec').value||10, lat=document.getElementById('tgt_lat_dec').value||36; window.open('https://earth.google.com/web/@'+lat+','+lon+',1000a,1000d,1y'); closeAllMenus(); }
+function showOnMap() { var lon=document.getElementById('tgt_lon_dec').value||10, lat=document.getElementById('tgt_lat_dec').value||36; window.open('https://www.google.com/maps/@'+lat+','+lon+',15z'); closeAllMenus(); }
+function downloadFile(content,filename,mime) { var blob=new Blob([content],{type:mime}); var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=filename; a.click(); URL.revokeObjectURL(url); }
+function saveSettings() { setLang(document.getElementById('setting_lang').value); closeModal('settingsModal'); toast('✅ OK'); }
+
+// ============ EXPORT PDF PRO ============
+function exportPDF() {
+  if(!window.jspdf) { toast('❌ jsPDF non chargé'); return; }
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF();
+  
+  // En-tête premium
+  doc.setFillColor(16,185,129); doc.rect(0,0,210,40,'F');
+  doc.setFillColor(13,52,47); doc.rect(0,40,210,3,'F');
+  
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text('SubTopo Transform v4.0',15,18);
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text('Rapport de Transformation de Coordonnées',15,27);
+  doc.setFontSize(9);
+  doc.text('Developed by NASRAOUI FATHI | © 2025 SubTopo Engineering',15,35);
+  
+  var y = 55;
+  doc.setTextColor(0,0,0);
+  doc.setFontSize(10);
+  doc.text('Date: ' + new Date().toLocaleString('fr-FR'), 15, y); y += 6;
+  doc.text('Point: ' + (document.getElementById('src_name').value || 'NoName'), 15, y); y += 10;
+  
+  // Source
+  doc.setFillColor(16,185,129); doc.rect(15,y,180,8,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+  doc.text('SYSTÈME SOURCE',20,y+6); y += 12;
+  
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.text('EPSG Code: ' + document.getElementById('src_epsg').value, 20, y); y += 6;
+  doc.text('Datum: ' + (document.getElementById('src_datum').options[document.getElementById('src_datum').selectedIndex]||{}).text, 20, y); y += 6;
+  doc.text('East [m]: ' + (document.getElementById('src_east').value || '-'), 20, y); y += 6;
+  doc.text('North [m]: ' + (document.getElementById('src_north').value || '-'), 20, y); y += 6;
+  doc.text('Ell. Height [m]: ' + (document.getElementById('src_height').value || '-'), 20, y); y += 12;
+  
+  // 7-Paramètres
+  doc.setFillColor(107,114,128); doc.rect(15,y,180,8,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('7-PARAMÈTRES (BURSA-WOLF)',20,y+6); y += 12;
+  
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+  doc.text('X0 = '+document.getElementById('param_x0').value+' m | Y0 = '+document.getElementById('param_y0').value+' m | Z0 = '+document.getElementById('param_z0').value+' m',20,y); y += 6;
+  doc.text('ex = '+document.getElementById('param_ex').value+'" | ey = '+document.getElementById('param_ey').value+'" | ez = '+document.getElementById('param_ez').value+'" | m = '+document.getElementById('param_m').value+' ppm',20,y); y += 12;
+  
+  // Target
+  doc.setFillColor(245,158,11); doc.rect(15,y,180,8,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('SYSTÈME CIBLE',20,y+6); y += 12;
+  
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+  doc.text('EPSG Code: ' + document.getElementById('tgt_epsg').value, 20, y); y += 6;
+  doc.text('Datum: ' + (document.getElementById('tgt_datum').options[document.getElementById('tgt_datum').selectedIndex]||{}).text, 20, y); y += 6;
+  
+  var tgtType = document.querySelector('input[name="tgt_type"]:checked').value;
+  if (tgtType === 'geodms') {
+    doc.text('Longitude: ' + document.getElementById('tgt_lon_sign').textContent + ' ' + (document.getElementById('tgt_lon_deg').value||'-') + '° ' + (document.getElementById('tgt_lon_min').value||'-') + "' " + (document.getElementById('tgt_lon_sec').value||'-') + '"', 20, y); y += 6;
+    doc.text('Latitude: ' + document.getElementById('tgt_lat_sign').textContent + ' ' + (document.getElementById('tgt_lat_deg').value||'-') + '° ' + (document.getElementById('tgt_lat_min').value||'-') + "' " + (document.getElementById('tgt_lat_sec').value||'-') + '"', 20, y); y += 6;
+    doc.text('Ell. Height [m]: ' + (document.getElementById('tgt_height_dms').value||'-'), 20, y); y += 6;
+  } else if (tgtType === 'geodec') {
+    doc.text('Longitude: ' + (document.getElementById('tgt_lon_dec').value||'-') + '°', 20, y); y += 6;
+    doc.text('Latitude: ' + (document.getElementById('tgt_lat_dec').value||'-') + '°', 20, y); y += 6;
+  } else {
+    doc.text('East [m]: ' + (document.getElementById('tgt_east').value||'-'), 20, y); y += 6;
+    doc.text('North [m]: ' + (document.getElementById('tgt_north').value||'-'), 20, y); y += 6;
+  }
+  y += 6;
+  doc.text('Geoid Model: ' + document.getElementById('geoid_model').value, 20, y); y += 12;
+  
+  // Cadre résultat
+  doc.setDrawColor(16,185,129); doc.setLineWidth(1);
+  doc.setFillColor(240,253,250); doc.roundedRect(15,y,180,20,3,3,'FD');
+  doc.setTextColor(16,185,129); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('✅ Transformation effectuée avec succès',105,y+13,{align:'center'});
+  
+  // Footer
+  doc.setFillColor(13,52,47); doc.rect(0,283,210,14,'F');
+  doc.setFontSize(8); doc.setTextColor(167,243,208);
+  doc.text('SubTopo Engineering - Developed by NASRAOUI FATHI - © 2025',105,290,{align:'center'});
+  doc.text('Page 1/1',195,290,{align:'right'});
+  
+  doc.save('subtopo-transform-'+Date.now()+'.pdf');
+  toast('✅ PDF exporté');
+  closeAllMenus();
+}
+
+// ============ EXPORT CSV PRO ============
+function exportCSV() {
+  var sep = ',';
+  var c = '';
+  c += '# SubTopo Transform v4.0 - Coordinate Conversion Report\n';
+  c += '# Developed by NASRAOUI FATHI - SubTopo Engineering - ' + new Date().toLocaleString('fr-FR') + '\n';
+  c += '#\n';
+  c += '# === SOURCE SYSTEM ===\n';
+  c += 'Source_EPSG' + sep + document.getElementById('src_epsg').value + '\n';
+  c += 'Source_Datum' + sep + (document.getElementById('src_datum').options[document.getElementById('src_datum').selectedIndex]||{}).text + '\n';
+  c += 'Source_Point' + sep + (document.getElementById('src_name').value || 'NoName') + '\n';
+  c += 'Source_East_m' + sep + document.getElementById('src_east').value + '\n';
+  c += 'Source_North_m' + sep + document.getElementById('src_north').value + '\n';
+  c += 'Source_Height_m' + sep + document.getElementById('src_height').value + '\n';
+  c += '#\n';
+  c += '# === 7-PARAMETERS (BURSA-WOLF) ===\n';
+  c += 'X0_m' + sep + document.getElementById('param_x0').value + '\n';
+  c += 'Y0_m' + sep + document.getElementById('param_y0').value + '\n';
+  c += 'Z0_m' + sep + document.getElementById('param_z0').value + '\n';
+  c += 'ex_arcsec' + sep + document.getElementById('param_ex').value + '\n';
+  c += 'ey_arcsec' + sep + document.getElementById('param_ey').value + '\n';
+  c += 'ez_arcsec' + sep + document.getElementById('param_ez').value + '\n';
+  c += 'm_ppm' + sep + document.getElementById('param_m').value + '\n';
+  c += '#\n';
+  c += '# === TARGET SYSTEM ===\n';
+  c += 'Target_EPSG' + sep + document.getElementById('tgt_epsg').value + '\n';
+  c += 'Target_Datum' + sep + (document.getElementById('tgt_datum').options[document.getElementById('tgt_datum').selectedIndex]||{}).text + '\n';
+  
+  var tgtType = document.querySelector('input[name="tgt_type"]:checked').value;
+  if (tgtType === 'geodms') {
+    c += 'Target_Lon_DMS' + sep + document.getElementById('tgt_lon_sign').textContent + document.getElementById('tgt_lon_deg').value + '°' + document.getElementById('tgt_lon_min').value + "'" + document.getElementById('tgt_lon_sec').value + '"\n';
+    c += 'Target_Lat_DMS' + sep + document.getElementById('tgt_lat_sign').textContent + document.getElementById('tgt_lat_deg').value + '°' + document.getElementById('tgt_lat_min').value + "'" + document.getElementById('tgt_lat_sec').value + '"\n';
+  } else if (tgtType === 'geodec') {
+    c += 'Target_Lon_Dec' + sep + document.getElementById('tgt_lon_dec').value + '\n';
+    c += 'Target_Lat_Dec' + sep + document.getElementById('tgt_lat_dec').value + '\n';
+  } else {
+    c += 'Target_East_m' + sep + document.getElementById('tgt_east').value + '\n';
+    c += 'Target_North_m' + sep + document.getElementById('tgt_north').value + '\n';
+  }
+  c += '#\n';
+  c += 'Geoid_Model' + sep + document.getElementById('geoid_model').value + '\n';
+  c += '# END OF REPORT\n';
+  
+  downloadFile(c,'subtopo-transform-'+Date.now()+'.csv','text/csv');
+  toast('✅ CSV exporté');
+  closeAllMenus();
+}
+
+function exportDXF() {
+  var dxf='0\nSECTION\n2\nENTITIES\n';
+  var east=parseFloat(document.getElementById('src_east').value);
+  var north=parseFloat(document.getElementById('src_north').value);
+  if(!isNaN(east)&&!isNaN(north)) {
+    dxf+='0\nPOINT\n8\n0\n10\n'+east.toFixed(3)+'\n20\n'+north.toFixed(3)+'\n30\n0\n';
+    dxf+='0\nTEXT\n8\n0\n10\n'+(east+1).toFixed(3)+'\n20\n'+(north+1).toFixed(3)+'\n30\n0\n40\n1\n1\n'+(document.getElementById('src_name').value||'P')+'\n';
+  }
+  dxf+='0\nENDSEC\n0\nEOF\n';
+  downloadFile(dxf,'subtopo-transform-'+Date.now()+'.dxf','application/dxf');
+  toast('✅ DXF exporté');
+  closeAllMenus();
+}
+
+// ============ POPULATE DROPDOWNS ============
+function populateDropdowns() {
+  // Areas
+  ['src_area','tgt_area'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    sel.innerHTML = '';
+    AREAS.forEach(function(a) {
+      var opt = document.createElement('option');
+      opt.value = a.v; opt.textContent = a.t;
+      sel.appendChild(opt);
+    });
+  });
+  
+  // Datums
+  ['src_datum','tgt_datum'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    sel.innerHTML = '';
+    DATUMS.forEach(function(d) {
+      var opt = document.createElement('option');
+      opt.value = d.v; opt.textContent = d.t;
+      sel.appendChild(opt);
+    });
+  });
+  
+  // Projections - UTM Zones 1-60 N/S + special
+  ['src_projection','tgt_projection'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    sel.innerHTML = '';
+    // Special projections
+    var specials = [
+      {v:'IGN_TUN_S',t:'🇹🇳 IGN Tunisie Sud (STT)'},
+      {v:'IGN_TUN_N',t:'🇹🇳 IGN Tunisie Nord (NTT)'},
+      {v:'LAMBERT_TUN',t:'🇹🇳 Lambert Tunisie'},
+      {v:'LAMBERT_NORD_ALG',t:'🇩🇿 Lambert Nord Algérie'},
+      {v:'LAMBERT_SUD_ALG',t:'🇩🇿 Lambert Sud Algérie'},
+      {v:'MERCH_MAROC',t:'🇲🇦 Merchich Maroc'}
+    ];
+    specials.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.v; opt.textContent = s.t;
+      sel.appendChild(opt);
+    });
+    // UTM Nord 1-60
+    for (var z=1; z<=60; z++) {
+      var opt = document.createElement('option');
+      opt.value = 'UTM'+z+'N';
+      opt.textContent = 'UTM Zone '+z+'N';
+      if (z === 34) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    // UTM Sud 1-60
+    for (var z=1; z<=60; z++) {
+      var opt = document.createElement('option');
+      opt.value = 'UTM'+z+'S';
+      opt.textContent = 'UTM Zone '+z+'S';
+      sel.appendChild(opt);
+    }
+  });
+  
+  // Param presets
+  var paramSel = document.getElementById('param_preset');
+  paramSel.innerHTML = '';
+  PARAM_PRESETS.forEach(function(p) {
+    var opt = document.createElement('option');
+    opt.value = p.v; opt.textContent = p.t;
+    paramSel.appendChild(opt);
+  });
+  
+  // Param table
+  var paramBody = document.getElementById('paramTableBody');
+  paramBody.innerHTML = '';
+  PARAM_PRESETS.filter(function(p) { return p.v !== 'custom'; }).forEach(function(p) {
+    var tr = document.createElement('tr');
+    if (p.v.indexOf('tunisia')>=0 || p.v.indexOf('carthage')>=0) tr.style.background = '#fef3c7';
+    tr.innerHTML = '<td>'+p.t+'</td><td>'+p.x+'</td><td>'+p.y+'</td><td>'+p.z+'</td><td><button class="action-btn" onclick="loadPreset(\''+p.v+'\')" style="width:auto;padding:4px 8px;font-size:10px">Charger</button></td>';
+    paramBody.appendChild(tr);
+  });
+  
+  // EPSG catalog
+  var epsgBody = document.getElementById('epsg_tbody');
+  epsgBody.innerHTML = '';
+  EPSG_CATALOG.forEach(function(e) {
+    var tr = document.createElement('tr');
+    if (e.d.indexOf('🇹🇳') >= 0) tr.style.background = '#fef3c7';
+    tr.innerHTML = '<td>'+e.c+'</td><td>'+e.d+'</td><td><button class="action-btn" onclick="selectEPSG('+e.c+',\'src\')" style="width:auto;padding:4px;font-size:10px">→Src</button> <button class="action-btn" onclick="selectEPSG('+e.c+',\'tgt\')" style="width:auto;padding:4px;font-size:10px">→Tgt</button></td>';
+    epsgBody.appendChild(tr);
+  });
+  
+  // Datum table
+  var datumBody = document.getElementById('datumTableBody');
+  datumBody.innerHTML = '';
+  DATUMS.forEach(function(d) {
+    var tr = document.createElement('tr');
+    if (d.t.indexOf('🇹🇳') >= 0) tr.style.background = '#fef3c7';
+    tr.innerHTML = '<td>'+d.t+'</td><td>'+d.e+'</td><td>'+d.r+'</td>';
+    datumBody.appendChild(tr);
+  });
+}
+
+// ============ INIT ============
+document.addEventListener('DOMContentLoaded', function() {
+  setLang(currentLang);
+  populateDropdowns();
+  
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  document.getElementById('pwdInput').addEventListener('keypress', function(e) { if(e.key==='Enter') tryLogin(); });
+  document.getElementById('pwdInput').focus();
+  
+  document.addEventListener('keydown', function(e) {
+    if(e.key==='Escape') { closeAllMenus(); closeAllModals(); }
+    if(e.ctrlKey&&e.key==='s') { e.preventDefault(); saveFile(); }
+    if(e.ctrlKey&&e.key==='o') { e.preventDefault(); openFile(); }
+    if(e.ctrlKey&&e.key==='n') { e.preventDefault(); newFile(); }
+    if(e.key==='F5') { e.preventDefault(); performTransform(); }
+    if(e.key==='F1') { e.preventDefault(); showModal('helpModal'); }
+  });
+});
+</script>
+</body>
+</html>
