@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="fr" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#10b981">
+<title>SubTopo Transform v5.0 PREMIUM - Coordinate Converter</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='95' fill='%23fff' stroke='%23ccc' stroke-width='3'/%3E%3Cpath d='M30,108 Q60,75 100,100 T170,108' stroke='%231e5a8a' stroke-width='8' fill='none'/%3E%3Cpath d='M30,125 Q60,100 100,118 T170,125' stroke='%2329b6f6' stroke-width='8' fill='none'/%3E%3C/svg%3E">
+<script src="https://cdn.jsdelivr.net/npm/proj4@2.9.0/dist/proj4.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:#1e3a35;min-height:100vh;color:#fff;font-size:13px}
+body.rtl{direction:rtl}
+
+/* PREMIUM BADGE */
+.premium-badge{display:inline-block;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a1a1a;padding:2px 10px;border-radius:12px;font-size:10px;font-weight:900;letter-spacing:1px;margin-left:8px;box-shadow:0 2px 8px rgba(251,191,36,0.5)}
+
+#loginOverlay{position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#071f1c,#0a2e2a,#071f1c);display:flex;align-items:center;justify-content:center;padding:20px}
+#loginOverlay.hidden{display:none!important}
+.login-box{background:#0f3a35;border:2px solid #fbbf24;border-radius:20px;padding:40px 30px;max-width:400px;width:100%;text-align:center;box-shadow:0 0 60px rgba(251,191,36,0.3)}
+.login-logo{width:100px;height:100px;border-radius:20px;margin:0 auto 20px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(16,185,129,.3);padding:10px}
+.subtopo-logo{width:100%;height:100%}
+.login-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.login-sub{font-size:13px;color:#a7f3d0;margin-bottom:30px}
+.login-box input{width:100%;padding:14px;background:#0a2e2a;color:#fff;border:1px solid #1a5f56;border-radius:12px;font-size:15px;margin-bottom:12px;text-align:center;letter-spacing:3px}
+.login-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;font-size:15px;cursor:pointer}
+.login-error{color:#ef4444;font-size:13px;margin-top:10px;min-height:18px}
+.lang-selector{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.lang-btn{background:#0a2e2a;border:1px solid #1a5f56;color:#a7f3d0;padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600}
+.lang-btn.active{background:#10b981;color:#fff}
+
+.app-container{display:none}.app-container.visible{display:block}
+
+.title-bar{background:linear-gradient(180deg,#2d5e3d,#1a5f56);color:#fff;padding:6px 12px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.title-bar-logo{display:flex;align-items:center;gap:10px}
+.title-bar-logo .logo-icon{width:28px;height:28px;background:#fff;border-radius:6px;padding:3px;display:flex;align-items:center;justify-content:center}
+.title-bar-buttons{display:flex;gap:4px}
+.title-bar-btn{background:transparent;border:1px solid #fff;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer}
+
+.menu-bar{background:#2d2d2d;display:flex;padding:4px 8px;border-bottom:1px solid #1a1a1a;font-size:12px;flex-wrap:wrap}
+.menu-item{padding:4px 12px;cursor:pointer;color:#ddd;border-radius:3px}
+.menu-item:hover{background:#10b981;color:#fff}
+.menu-item u{text-decoration:underline}
+
+.menu-dropdown{position:fixed;background:#1a1a1a;border:1px solid #444;border-radius:4px;min-width:280px;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;padding:4px 0}
+.menu-dropdown.show{display:block}
+.menu-dropdown-item{padding:8px 16px;color:#ddd;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px}
+.menu-dropdown-item:hover{background:#10b981;color:#fff}
+.menu-dropdown-item .shortcut{margin-left:auto;color:#888;font-size:10px}
+.menu-separator{height:1px;background:#444;margin:4px 0}
+
+.toolbar{background:linear-gradient(180deg,#f5f5f5,#d4d4d4);display:flex;padding:6px 8px;gap:4px;border-bottom:2px solid #888;overflow-x:auto;flex-wrap:wrap;align-items:center}
+.tb-btn{background:linear-gradient(180deg,#fff,#ddd);border:1px solid #999;border-radius:4px;padding:6px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:4px;color:#333;white-space:nowrap}
+.tb-btn:hover{background:linear-gradient(180deg,#e0f7ee,#b8e6d0);border-color:#10b981}
+.tb-btn.premium{background:linear-gradient(180deg,#fef3c7,#fbbf24);border-color:#d97706;color:#1a1a1a;font-weight:700}
+.tb-separator{width:1px;background:#888;margin:0 4px;height:20px}
+
+.main-container{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;padding:8px}
+@media(max-width:1100px){.main-container{grid-template-columns:1fr}}
+
+.panel-box{background:#f0f0f0;border:2px solid #888;border-radius:6px;color:#1a1a1a}
+.panel-header{color:#fff;padding:8px 12px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-radius:4px 4px 0 0}
+.panel-content{padding:10px}
+.source-panel{border-color:#10b981}
+.source-panel .panel-header{background:linear-gradient(180deg,#10b981,#059669)}
+.target-panel{border-color:#f59e0b}
+.target-panel .panel-header{background:linear-gradient(180deg,#f59e0b,#d97706)}
+.center-panel{border-color:#6b7280}
+.center-panel .panel-header{background:linear-gradient(180deg,#6b7280,#4b5563)}
+
+.field-row{display:grid;grid-template-columns:100px 1fr;gap:6px;margin-bottom:6px;align-items:center}
+.field-row label{font-size:11px;color:#333;font-weight:600;text-align:right}
+.field-row input,.field-row select{padding:4px 6px;border:1px solid #999;border-radius:3px;font-size:12px;background:#fff;color:#000;font-family:'Courier New',monospace}
+.field-row input:focus,.field-row select:focus{outline:2px solid #10b981;border-color:#10b981}
+
+.section-box{background:#fff;border:1px solid #999;border-radius:4px;padding:10px;margin:8px 0}
+.section-title{font-size:11px;font-weight:700;color:#2d5e3d;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:8px}
+.result-input{background:#e8f5e9!important;border:1px solid #10b981!important;color:#1a5f56!important;font-weight:700!important}
+
+.action-btn{background:linear-gradient(180deg,#10b981,#059669);color:#fff;border:1px solid #047857;padding:8px 14px;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:4px}
+.action-btn:hover{background:linear-gradient(180deg,#059669,#047857)}
+.action-btn-secondary{background:linear-gradient(180deg,#f5f5f5,#ddd);color:#333;border:1px solid #999}
+.action-btn-premium{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#1a1a1a;border:1px solid #d97706;font-weight:800}
+.action-btn-premium:hover{background:linear-gradient(180deg,#f59e0b,#d97706)}
+.action-btn-danger{background:linear-gradient(180deg,#ef4444,#dc2626);color:#fff;border:1px solid #b91c1c}
+
+.transform-center{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#1a1a1a;border:2px solid #d97706;padding:12px 20px;border-radius:6px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin:8px 0;box-shadow:0 2px 8px rgba(245,158,11,0.4)}
+
+.checkbox-row{display:flex;align-items:center;gap:6px;padding:4px;font-size:11px;color:#333;cursor:pointer}
+.checkbox-row input[type="checkbox"]{accent-color:#10b981}
+
+.footer-path{background:#d4d4d4;color:#333;padding:4px 8px;font-size:10px;font-family:'Courier New',monospace;border-top:1px solid #888;margin-top:4px}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(150px);background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:14px 28px;border-radius:25px;border:2px solid #34d399;z-index:99999;transition:transform 0.4s,opacity 0.4s;font-weight:700;font-size:14px;box-shadow:0 8px 32px rgba(16,185,129,0.5);opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal-box{background:#f0f0f0;border-radius:8px;max-width:900px;width:100%;color:#1a1a1a;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.modal-box.large{max-width:1100px}
+.modal-header{background:linear-gradient(180deg,#10b981,#059669);color:#fff;padding:10px 16px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+.modal-header.premium{background:linear-gradient(180deg,#fbbf24,#f59e0b);color:#1a1a1a}
+.modal-close{background:rgba(255,255,255,.2);border:none;color:inherit;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:14px}
+.modal-content{padding:20px;overflow-y:auto;max-height:75vh}
+.modal-footer{padding:12px 16px;background:#e0e0e0;border-top:1px solid #ccc;display:flex;gap:8px;justify-content:flex-end}
+.modal-section{background:#fff;border:1px solid #ddd;border-radius:4px;padding:12px;margin-bottom:12px}
+.modal-section h3{font-size:12px;font-weight:700;color:#2d5e3d;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #eee}
+
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{background:#2d5e3d;color:#fff;padding:6px;text-align:left}
+.data-table td{padding:4px 6px;border-bottom:1px solid #ddd;font-family:'Courier New',monospace}
+.data-table tr:nth-child(even){background:#f9f9f9}
+.data-table input{width:100%;padding:2px 4px;border:1px solid #ddd;border-radius:3px;font-size:11px;font-family:'Courier New',monospace}
+
+.log-display{background:#000;color:#0f0;font-family:'Courier New',monospace;padding:10px;border-radius:4px;max-height:400px;overflow-y:auto;font-size:11px;line-height:1.5;white-space:pre-wrap}
+
+.app-footer{background:linear-gradient(135deg,#0a2e2a,#1a5f56,#2d5e3d);color:#fff;padding:20px;border-top:3px solid #10b981;margin-top:30px}
+.footer-content{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px;max-width:1400px;margin:0 auto}
+.footer-left{display:flex;align-items:center;gap:14px}
+.footer-logo-box{width:50px;height:50px;background:#fff;border-radius:10px;padding:4px}
+.footer-company-name{font-size:14px;font-weight:800;color:#fff}
+.footer-tagline{font-size:11px;color:#a7f3d0;margin-top:2px}
+.footer-center{text-align:center}
+.footer-developed-by{font-size:10px;color:#a7f3d0;text-transform:uppercase;letter-spacing:3px;margin-bottom:6px}
+.footer-author-name{font-size:20px;font-weight:900;color:#fef3c7;background:linear-gradient(135deg,#10b981,#059669);padding:8px 24px;border-radius:25px;border:2px solid #34d399;display:inline-block}
+.footer-version-number{display:inline-block;background:rgba(16,185,129,0.3);padding:4px 12px;border-radius:6px;border:1px solid #10b981;font-size:14px;font-weight:800;color:#fff}
+.footer-bottom{text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.15);font-size:10px;color:#a7f3d0}
+
+.info-box{background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;padding:8px;font-size:10px;color:#92400e;margin-top:6px}
+.success-box{background:#d1fae5;border:1px solid #10b981;border-radius:4px;padding:10px;margin-top:8px;color:#065f46}
+.error-box{background:#fee2e2;border:1px solid #ef4444;border-radius:4px;padding:10px;margin-top:8px;color:#991b1b}
+
+.tabs{display:flex;border-bottom:2px solid #10b981;margin-bottom:10px}
+.tab-btn{padding:8px 16px;background:#e5e5e5;border:none;cursor:pointer;font-weight:600;color:#666;border-radius:4px 4px 0 0;margin-right:4px}
+.tab-btn.active{background:#10b981;color:#fff}
+
+.file-input-hidden{display:none}
+
+.db-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:15px}
+.db-stat-card{background:linear-gradient(135deg,#10b981,#059669);color:#fff;padding:15px;border-radius:8px;text-align:center}
+.db-stat-card .number{font-size:28px;font-weight:900}
+.db-stat-card .label{font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-top:4px;opacity:0.9}
+</style>
+</head>
+<body>
+<svg style="display:none"><defs><symbol id="subtopo-logo" viewBox="0 0 200 200"><circle cx="100" cy="100" r="95" fill="#fff" stroke="#ccc" stroke-width="3"/><path d="M30,108 Q60,75 100,100 T170,108" stroke="#1e5a8a" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M30,125 Q60,100 100,118 T170,125" stroke="#29b6f6" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="#666"/></symbol></defs></svg>
+
+<div id="loginOverlay">
+<div class="login-box">
+<div class="login-logo"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div>
+<div class="login-title">SubTopo Transform <span class="premium-badge">PREMIUM</span></div>
+<div class="login-sub">Coordinate Converter Pro v5.0</div>
+<div class="lang-selector">
+<button class="lang-btn active" data-lang="fr" onclick="setLang('fr')">🇫🇷 FR</button>
+<button class="lang-btn" data-lang="en" onclick="setLang('en')">🇬🇧 EN</button>
+<button class="lang-btn" data-lang="ar" onclick="setLang('ar')">🇸🇦 AR</button>
+</div>
+<input type="password" id="pwdInput" placeholder="Mot de passe" autocomplete="off">
+<button class="login-btn" id="loginBtn">🔓 SE CONNECTER</button>
+<div class="login-error" id="pwdError"></div>
+<div style="margin-top:24px;padding-top:20px;border-top:1px solid #1a5f56;font-size:11px;color:#a7f3d0">© 2025 SubTopo Engineering<br><b style="color:#34d399">NASRAOUI FATHI</b></div>
+</div></div>
+
+<div class="app-container" id="appContainer">
+
+<div class="title-bar">
+<div class="title-bar-logo">
+<div class="logo-icon"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div>
+<span>SubTopo Transform v5.0 PREMIUM - Coordinate Converter</span>
+<span class="premium-badge">⭐ PREMIUM</span>
+</div>
+<div class="title-bar-buttons">
+<button class="title-bar-btn" onclick="showModal('aboutModal')">ℹ️</button>
+<button class="title-bar-btn" onclick="logout()">✖</button>
+</div></div>
+
+<div class="menu-bar">
+<div class="menu-item" onclick="toggleMenu('fileMenu',this)"><u>F</u>ile</div>
+<div class="menu-item" onclick="toggleMenu('editMenu',this)"><u>E</u>dit</div>
+<div class="menu-item" onclick="toggleMenu('paramMenu',this)"><u>P</u>arameter</div>
+<div class="menu-item" onclick="toggleMenu('calcMenu',this)"><u>C</u>alculation</div>
+<div class="menu-item" onclick="toggleMenu('dbMenu',this)" style="background:#fbbf24;color:#1a1a1a"><u>D</u>atabase ⭐</div>
+<div class="menu-item" onclick="toggleMenu('extraMenu',this)"><u>E</u>xtras</div>
+<div class="menu-item" onclick="toggleMenu('helpMenu',this)"><u>H</u>elp</div>
+</div>
+
+<div class="toolbar">
+<button class="tb-btn" onclick="newFile()">📄 Nouveau</button>
+<button class="tb-btn" onclick="showModal('dbProjectsModal')">📂 Projets</button>
+<div class="tb-separator"></div>
+<button class="tb-btn premium" onclick="showModal('calc7ParamModal')">🎯 Calcul 7-Param ⭐</button>
+<button class="tb-btn premium" onclick="showModal('dbModal')">💾 Database ⭐</button>
+<div class="tb-separator"></div>
+<button class="tb-btn" onclick="showModal('epsgModal')">🔢 EPSG</button>
+<button class="tb-btn" onclick="showModal('sevenParamModal')">⚙️ Presets</button>
+<div class="tb-separator"></div>
+<button class="tb-btn" onclick="showLogfile()">📋 Logfile</button>
+<button class="tb-btn" onclick="swapSystems()">🔄 Swap</button>
+<button class="tb-btn" onclick="resetAll()">🔁 RESET</button>
+<div class="tb-separator"></div>
+<button class="tb-btn" onclick="exportPDF()">📑 PDF</button>
+<button class="tb-btn" onclick="exportCSV()">📊 CSV</button>
+<button class="tb-btn" onclick="exportDXF()">📐 DXF</button>
+</div>
+
+<input type="file" id="fileImport" class="file-input-hidden" accept=".csv,.txt,.gpx,.kml,.json">
+<input type="file" id="fileOpen" class="file-input-hidden" accept=".json">
+
+<!-- Menus -->
+<div class="menu-dropdown" id="fileMenu">
+<div class="menu-dropdown-item" onclick="newFile()"><span>📄</span> Nouveau Projet</div>
+<div class="menu-dropdown-item" onclick="openFile()"><span>📂</span> Ouvrir</div>
+<div class="menu-dropdown-item" onclick="saveFile()"><span>💾</span> Sauvegarder</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="exportPDF()"><span>📑</span> Exporter PDF</div>
+<div class="menu-dropdown-item" onclick="exportCSV()"><span>📊</span> Exporter CSV</div>
+<div class="menu-dropdown-item" onclick="exportDXF()"><span>📐</span> Exporter DXF</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="logout()"><span>🚪</span> Quitter</div>
+</div>
+<div class="menu-dropdown" id="editMenu">
+<div class="menu-dropdown-item" onclick="clearAllFields()"><span>🗑️</span> Effacer</div>
+<div class="menu-dropdown-item" onclick="resetAll()"><span>🔁</span> Reset</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="loadDefaultTunisia()"><span>🇹🇳</span> Défaut Tunisie</div>
+<div class="menu-dropdown-item" onclick="loadDefaultAlgeria()"><span>🇩🇿</span> Défaut Algérie</div>
+<div class="menu-dropdown-item" onclick="loadExampleED50()"><span>🇪🇺</span> Exemple ED50→WGS84</div>
+</div>
+<div class="menu-dropdown" id="paramMenu">
+<div class="menu-dropdown-item" onclick="showModal('datumModal')"><span>🗺️</span> Datums</div>
+<div class="menu-dropdown-item" onclick="showModal('sevenParamModal')"><span>⚙️</span> 7-Paramètres Presets</div>
+<div class="menu-dropdown-item" onclick="showModal('epsgModal')"><span>🔢</span> Catalogue EPSG</div>
+</div>
+<div class="menu-dropdown" id="calcMenu">
+<div class="menu-dropdown-item" onclick="performTransform()"><span>➡️</span> Transformer<span class="shortcut">F5</span></div>
+<div class="menu-dropdown-item" onclick="inverseTransform()"><span>🔄</span> Inverse</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="showModal('calc7ParamModal')" style="color:#fbbf24"><span>🎯</span> ⭐ Calculer 7-Paramètres</div>
+<div class="menu-dropdown-item" onclick="showModal('batchModal')"><span>📊</span> Transformation par lot</div>
+</div>
+<div class="menu-dropdown" id="dbMenu">
+<div class="menu-dropdown-item" onclick="showModal('dbModal')"><span>💾</span> Vue d'ensemble</div>
+<div class="menu-dropdown-item" onclick="showModal('dbProjectsModal')"><span>📂</span> Projets</div>
+<div class="menu-dropdown-item" onclick="showModal('dbPointsModal')"><span>📍</span> Points</div>
+<div class="menu-dropdown-item" onclick="showModal('dbParamsModal')"><span>⚙️</span> Paramètres sauvegardés</div>
+<div class="menu-separator"></div>
+<div class="menu-dropdown-item" onclick="exportDatabase()"><span>📤</span> Exporter base de données</div>
+<div class="menu-dropdown-item" onclick="importDatabase()"><span>📥</span> Importer base de données</div>
+</div>
+<div class="menu-dropdown" id="extraMenu">
+<div class="menu-dropdown-item" onclick="showModal('utmFinderModal')"><span>📍</span> Zone UTM</div>
+<div class="menu-dropdown-item" onclick="showLog()"><span>📋</span> Logfile</div>
+<div class="menu-dropdown-item" onclick="googleEarth()"><span>🌍</span> Google Earth</div>
+</div>
+<div class="menu-dropdown" id="helpMenu">
+<div class="menu-dropdown-item" onclick="showModal('aboutModal')"><span>ℹ️</span> À propos</div>
+<div class="menu-dropdown-item" onclick="showModal('helpModal')"><span>❓</span> Aide</div>
+</div>
+
+<div class="main-container">
+
+<!-- SOURCE -->
+<div class="panel-box source-panel">
+<div class="panel-header">➡️ Système Source <button class="title-bar-btn" onclick="swapSystems()">🔄</button></div>
+<div class="panel-content">
+<div class="field-row"><label>EPSG-Code:</label><input type="text" id="src_epsg" value="23034" onchange="updateDatumFromEPSG('src')"></div>
+<div class="field-row"><label>Système:</label><select id="src_system" onchange="onSrcSystemChange()"></select></div>
+<div class="field-row"><label>Datum:</label><input type="text" id="src_datum" value="ED50" readonly></div>
+<div class="section-box">
+<div class="section-title">📍 Coordonnées Source (X, Y, Z)</div>
+<div class="field-row"><label>Point-Name:</label><input type="text" id="src_name" value="P1"></div>
+<div class="field-row"><label>X [m]:</label><input type="number" step="0.0001" id="src_x" value="375046.3723"></div>
+<div class="field-row"><label>Y [m]:</label><input type="number" step="0.0001" id="src_y" value="3289159.6498"></div>
+<div class="field-row"><label>Z [m]:</label><input type="number" step="0.0001" id="src_z" value="-26.9750"></div>
+</div>
+<button class="action-btn" onclick="performTransform()">▶ Calculer</button>
+<button class="action-btn action-btn-premium" onclick="savePointToDB()">💾 ⭐ Sauvegarder dans DB</button>
+<button class="action-btn action-btn-secondary" onclick="newInput()">📝 Nouveau</button>
+<div class="footer-path">📁 Database: <span id="dbStatus">Connectée ✅</span></div>
+</div></div>
+
+<!-- CENTER -->
+<div class="panel-box center-panel">
+<div class="panel-header">⚙️ Transform</div>
+<div class="panel-content">
+<button class="transform-center" onclick="performTransform()">➡️ TRANSFORM ➡️</button>
+<div class="section-box">
+<div class="section-title">7-Paramètres</div>
+<select id="param_preset" onchange="loadParamPreset()"></select>
+<div style="margin-top:10px">
+<div style="font-size:11px;font-weight:700;margin-bottom:6px;color:#333">3D-Datum-Shift:</div>
+<div class="field-row"><label>X0 [m]:</label><input type="number" step="0.001" id="param_x0" value="-87.000"></div>
+<div class="field-row"><label>Y0 [m]:</label><input type="number" step="0.001" id="param_y0" value="-98.000"></div>
+<div class="field-row"><label>Z0 [m]:</label><input type="number" step="0.001" id="param_z0" value="-121.000"></div>
+<div class="field-row"><label>ex ["]:</label><input type="number" step="0.000001" id="param_ex" value="0.000000"></div>
+<div class="field-row"><label>ey ["]:</label><input type="number" step="0.000001" id="param_ey" value="0.000000"></div>
+<div class="field-row"><label>ez ["]:</label><input type="number" step="0.000001" id="param_ez" value="0.000000"></div>
+<div class="field-row"><label>m [ppm]:</label><input type="number" step="0.0001" id="param_m" value="0.0000"></div>
+</div>
+<button class="action-btn action-btn-premium" onclick="showModal('calc7ParamModal')">🎯 ⭐ Calculer 7-Paramètres</button>
+<button class="action-btn action-btn-secondary" onclick="saveParamsToDB()">💾 Sauvegarder Params</button>
+</div>
+<div class="section-box">
+<div class="section-title">🌐 Geoidmodel</div>
+<select id="geoid_model"><option value="EGM2008" selected>EGM2008</option><option value="EGM96">EGM96</option><option value="None">None</option></select>
+</div>
+</div></div>
+
+<!-- TARGET -->
+<div class="panel-box target-panel">
+<div class="panel-header">Système Cible ⬅️</div>
+<div class="panel-content">
+<div class="field-row"><label>EPSG-Code:</label><input type="text" id="tgt_epsg" value="32634" onchange="updateDatumFromEPSG('tgt')"></div>
+<div class="field-row"><label>Système:</label><select id="tgt_system" onchange="onTgtSystemChange()"></select></div>
+<div class="field-row"><label>Datum:</label><input type="text" id="tgt_datum" value="WGS84" readonly></div>
+<div class="section-box">
+<div class="section-title">📐 Résultats (X, Y, Z)</div>
+<div class="field-row"><label>Point-Name:</label><input type="text" id="tgt_name" readonly class="result-input"></div>
+<div class="field-row"><label>X [m]:</label><input type="text" id="tgt_x" readonly class="result-input"></div>
+<div class="field-row"><label>Y [m]:</label><input type="text" id="tgt_y" readonly class="result-input"></div>
+<div class="field-row"><label>Z [m]:</label><input type="text" id="tgt_z" readonly class="result-input"></div>
+</div>
+<div class="section-box">
+<div class="section-title">ℹ️ Infos</div>
+<div class="field-row"><label>ΔX [m]:</label><input type="text" id="delta_x" readonly class="result-input"></div>
+<div class="field-row"><label>ΔY [m]:</label><input type="text" id="delta_y" readonly class="result-input"></div>
+<div class="field-row"><label>Lon:</label><input type="text" id="tgt_lon_dec" readonly class="result-input"></div>
+<div class="field-row"><label>Lat:</label><input type="text" id="tgt_lat_dec" readonly class="result-input"></div>
+</div>
+<button class="action-btn action-btn-premium" onclick="saveTransformToDB()">💾 ⭐ Sauvegarder transformation</button>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px">
+<button class="action-btn action-btn-secondary" onclick="googleEarth()">🌍 Google Earth</button>
+<button class="action-btn action-btn-secondary" onclick="showOnMap()">🗺️ Maps</button>
+</div>
+</div></div>
+</div>
+
+<!-- ========================= MODALS ========================= -->
+
+<!-- 🎯 CALCUL 7-PARAMÈTRES (PREMIUM) -->
+<div class="modal-overlay" id="calc7ParamModal">
+<div class="modal-box large">
+<div class="modal-header premium"><span>🎯 ⭐ Calcul des 7-Paramètres (Bursa-Wolf) - PREMIUM</span><button class="modal-close" onclick="closeModal('calc7ParamModal')">✕</button></div>
+<div class="modal-content">
+
+<div class="info-box">
+ℹ️ <b>Méthode des moindres carrés</b> - Saisissez minimum <b>3 points communs</b> dans les 2 systèmes pour calculer automatiquement les paramètres de transformation Bursa-Wolf.
+</div>
+
+<div class="modal-section">
+<h3>📋 Points Communs (saisir au moins 3 points)</h3>
+<table class="data-table" id="commonPointsTable">
+<thead>
+<tr>
+<th>#</th>
+<th>Nom Point</th>
+<th colspan="3" style="text-align:center;background:#10b981">Système SOURCE (X, Y, Z)</th>
+<th colspan="3" style="text-align:center;background:#f59e0b">Système CIBLE (X, Y, Z)</th>
+<th>Action</th>
+</tr>
+<tr>
+<th></th><th></th>
+<th>X1</th><th>Y1</th><th>Z1</th>
+<th>X2</th><th>Y2</th><th>Z2</th>
+<th></th>
+</tr>
+</thead>
+<tbody id="commonPointsBody"></tbody>
+</table>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+<button class="action-btn" onclick="addCommonPoint()">➕ Ajouter Point</button>
+<button class="action-btn action-btn-secondary" onclick="loadExamplePoints()">📋 Charger exemple</button>
+<button class="action-btn action-btn-danger" onclick="clearCommonPoints()">🗑️ Vider</button>
+</div>
+</div>
+
+<div class="modal-section">
+<h3>⚙️ Calcul</h3>
+<button class="action-btn action-btn-premium" onclick="calculate7Parameters()" style="padding:14px;font-size:14px">🎯 ⭐ CALCULER LES 7 PARAMÈTRES</button>
+</div>
+
+<div class="modal-section" id="results7Param" style="display:none">
+<h3>✅ Résultats du Calcul</h3>
+<div class="success-box" id="calcSuccessMsg"></div>
+<table class="data-table" style="margin-top:10px">
+<thead><tr><th>Paramètre</th><th>Valeur Calculée</th><th>Unité</th></tr></thead>
+<tbody id="paramsResultBody"></tbody>
+</table>
+<div style="margin-top:10px">
+<h4 style="color:#2d5e3d;margin-bottom:8px">📊 Précision (Résidus)</h4>
+<table class="data-table" id="residualsTable">
+<thead><tr><th>Point</th><th>ΔX [m]</th><th>ΔY [m]</th><th>ΔZ [m]</th><th>Total [m]</th></tr></thead>
+<tbody id="residualsBody"></tbody>
+</table>
+<div id="rmsResult" style="margin-top:8px;padding:10px;background:#dbeafe;border-radius:4px;font-weight:700;color:#1e40af"></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:15px">
+<button class="action-btn" onclick="applyCalculatedParams()">✅ Appliquer ces paramètres</button>
+<button class="action-btn action-btn-secondary" onclick="saveCalculatedParams()">💾 Sauvegarder dans DB</button>
+<button class="action-btn action-btn-secondary" onclick="exportCalculatedParams()">📑 Exporter PDF</button>
+</div>
+</div>
+
+</div>
+<div class="modal-footer">
+<button class="action-btn action-btn-secondary" onclick="closeModal('calc7ParamModal')" style="width:auto;padding:8px 20px">Fermer</button>
+</div>
+</div></div>
+
+<!-- 💾 DATABASE OVERVIEW (PREMIUM) -->
+<div class="modal-overlay" id="dbModal">
+<div class="modal-box large">
+<div class="modal-header premium"><span>💾 ⭐ Base de Données - Vue d'ensemble</span><button class="modal-close" onclick="closeModal('dbModal')">✕</button></div>
+<div class="modal-content">
+
+<div class="db-stats">
+<div class="db-stat-card"><div class="number" id="stat_projects">0</div><div class="label">Projets</div></div>
+<div class="db-stat-card" style="background:linear-gradient(135deg,#f59e0b,#d97706)"><div class="number" id="stat_points">0</div><div class="label">Points</div></div>
+<div class="db-stat-card" style="background:linear-gradient(135deg,#3b82f6,#1e40af)"><div class="number" id="stat_transforms">0</div><div class="label">Transformations</div></div>
+<div class="db-stat-card" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9)"><div class="number" id="stat_params">0</div><div class="label">Paramètres</div></div>
+</div>
+
+<div class="tabs">
+<button class="tab-btn active" onclick="switchDbTab('projects')">📂 Projets</button>
+<button class="tab-btn" onclick="switchDbTab('points')">📍 Points</button>
+<button class="tab-btn" onclick="switchDbTab('transforms')">🔄 Transformations</button>
+<button class="tab-btn" onclick="switchDbTab('params')">⚙️ Paramètres</button>
+</div>
+
+<div id="dbTabProjects">
+<div style="display:flex;gap:8px;margin-bottom:10px">
+<input type="text" id="newProjectName" placeholder="Nom du nouveau projet..." style="flex:1;padding:8px;border:1px solid #ccc;border-radius:4px">
+<button class="action-btn" onclick="createNewProject()" style="width:auto;padding:8px 20px">➕ Créer</button>
+</div>
+<table class="data-table">
+<thead><tr><th>#</th><th>Nom Projet</th><th>Date création</th><th>Points</th><th>Actions</th></tr></thead>
+<tbody id="dbProjectsBody"></tbody>
+</table>
+</div>
+
+<div id="dbTabPoints" style="display:none">
+<input type="text" id="searchPoints" placeholder="🔍 Rechercher points..." style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;margin-bottom:10px" oninput="filterDbPoints()">
+<table class="data-table">
+<thead><tr><th>#</th><th>Nom</th><th>EPSG</th><th>X</th><th>Y</th><th>Z</th><th>Projet</th><th>Date</th><th>Actions</th></tr></thead>
+<tbody id="dbPointsBody"></tbody>
+</table>
+</div>
+
+<div id="dbTabTransforms" style="display:none">
+<table class="data-table">
+<thead><tr><th>#</th><th>Point</th><th>Source EPSG</th><th>Cible EPSG</th><th>X cible</th><th>Y cible</th><th>Date</th><th>Actions</th></tr></thead>
+<tbody id="dbTransformsBody"></tbody>
+</table>
+</div>
+
+<div id="dbTabParams" style="display:none">
+<table class="data-table">
+<thead><tr><th>#</th><th>Nom</th><th>Source</th><th>Cible</th><th>X0</th><th>Y0</th><th>Z0</th><th>m</th><th>Actions</th></tr></thead>
+<tbody id="dbParamsBody"></tbody>
+</table>
+</div>
+
+</div>
+<div class="modal-footer">
+<button class="action-btn action-btn-secondary" onclick="exportDatabase()" style="width:auto;padding:8px 20px">📤 Exporter DB</button>
+<button class="action-btn action-btn-danger" onclick="clearDatabase()" style="width:auto;padding:8px 20px">🗑️ Tout effacer</button>
+<button class="action-btn action-btn-secondary" onclick="closeModal('dbModal')" style="width:auto;padding:8px 20px">Fermer</button>
+</div>
+</div></div>
+
+<!-- Autres modals existants -->
+<div class="modal-overlay" id="aboutModal"><div class="modal-box"><div class="modal-header"><span>ℹ️ À propos</span><button class="modal-close" onclick="closeModal('aboutModal')">✕</button></div><div class="modal-content"><div style="text-align:center"><div style="width:100px;height:100px;margin:20px auto;background:#fff;border-radius:12px;padding:10px"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div><h2 style="color:#10b981">SubTopo Transform v5.0 <span class="premium-badge">PREMIUM</span></h2><p style="margin:10px 0">Convertisseur de Coordonnées Professionnel</p><div style="background:#f0f9f4;padding:12px;border-radius:8px;margin:15px 0;font-size:11px;text-align:left"><b>Fonctionnalités Premium:</b><br>✅ Calcul automatique des 7-paramètres (Bursa-Wolf)<br>✅ Base de données locale (IndexedDB)<br>✅ Gestion de projets multi-points<br>✅ Historique des transformations<br>✅ Catalogue EPSG complet (180+ codes)<br>✅ Tous les systèmes du monde<br>✅ Export PDF / CSV / DXF professionnel</div><p style="margin-top:20px;font-weight:700;color:#2d5e3d">Developed by NASRAOUI FATHI<br>© 2025 SubTopo Engineering</p></div></div><div class="modal-footer"><button class="action-btn" onclick="closeModal('aboutModal')" style="width:auto;padding:8px 20px">✅ OK</button></div></div></div>
+
+<div class="modal-overlay" id="helpModal"><div class="modal-box"><div class="modal-header"><span>❓ Aide</span><button class="modal-close" onclick="closeModal('helpModal')">✕</button></div><div class="modal-content"><div style="background:#fff;padding:16px;border-radius:4px"><h3 style="color:#2d5e3d">🎯 ⭐ NOUVEAU - Calcul des 7-Paramètres</h3><p>Cliquez sur <b>"🎯 Calculer 7-Paramètres"</b> dans le toolbar pour calculer automatiquement les paramètres Bursa-Wolf entre 2 systèmes à partir de points communs.</p><p><b>Méthode :</b> Saisir minimum 3 points connus dans les 2 systèmes → Le logiciel calcule X0, Y0, Z0, ex, ey, ez, m par moindres carrés.</p><h3 style="color:#2d5e3d;margin-top:16px">💾 ⭐ NOUVEAU - Base de Données</h3><p>Tous vos projets, points et transformations sont sauvegardés automatiquement dans une base de données locale (IndexedDB).</p><ul style="margin-left:20px"><li>📂 Créez des projets multiples</li><li>📍 Sauvegardez vos points</li><li>🔄 Historique complet des transformations</li><li>⚙️ Paramètres calculés conservés</li></ul></div></div><div class="modal-footer"><button class="action-btn" onclick="closeModal('helpModal')" style="width:auto;padding:8px 20px">Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="sevenParamModal"><div class="modal-box"><div class="modal-header"><span>⚙️ 7-Paramètres Presets</span><button class="modal-close" onclick="closeModal('sevenParamModal')">✕</button></div><div class="modal-content"><div class="modal-section"><table class="data-table"><thead><tr><th>Preset</th><th>ΔX</th><th>ΔY</th><th>ΔZ</th><th>Action</th></tr></thead><tbody id="paramTableBody"></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('sevenParamModal')" style="width:auto;padding:8px 20px">Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="epsgModal"><div class="modal-box"><div class="modal-header"><span>🔢 Catalogue EPSG</span><button class="modal-close" onclick="closeModal('epsgModal')">✕</button></div><div class="modal-content"><div class="modal-section"><input type="text" id="epsg_search" placeholder="🔍 Rechercher..." oninput="filterEPSG()" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;margin-bottom:10px"><table class="data-table"><thead><tr><th>EPSG</th><th>Description</th><th>Action</th></tr></thead><tbody id="epsg_tbody"></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('epsgModal')" style="width:auto;padding:8px 20px">Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="logfileModal"><div class="modal-box"><div class="modal-header"><span>📋 Logfile</span><button class="modal-close" onclick="closeModal('logfileModal')">✕</button></div><div class="modal-content"><div class="modal-section"><div class="log-display" id="logfile_content">[Aucune entrée]</div></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('logfileModal')" style="width:auto;padding:8px 20px">Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="datumModal"><div class="modal-box"><div class="modal-header"><span>🗺️ Datums</span><button class="modal-close" onclick="closeModal('datumModal')">✕</button></div><div class="modal-content"><div class="modal-section"><table class="data-table"><thead><tr><th>Datum</th><th>Ellipsoïde</th><th>Région</th></tr></thead><tbody id="datumTableBody"></tbody></table></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('datumModal')" style="width:auto;padding:8px 20px">Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="utmFinderModal"><div class="modal-box"><div class="modal-header"><span>📍 Zone UTM</span><button class="modal-close" onclick="closeModal('utmFinderModal')">✕</button></div><div class="modal-content"><div class="modal-section"><div class="field-row"><label>Lon:</label><input type="number" id="utm_lon" step="0.0001"></div><div class="field-row"><label>Lat:</label><input type="number" id="utm_lat" step="0.0001"></div><button class="action-btn" onclick="findUTMZone()">🔍 Trouver</button><div id="utm_result" style="margin-top:10px;padding:10px;background:#e8f5e9;border-radius:4px;display:none"></div></div></div><div class="modal-footer"><button class="action-btn action-btn-secondary" onclick="closeModal('utmFinderModal')" style="width:auto;padding:8px 20px">Fermer</button></div></div></div>
+
+<div class="modal-overlay" id="dbProjectsModal"><div class="modal-box"><div class="modal-header"><span>📂 Mes Projets</span><button class="modal-close" onclick="closeModal('dbProjectsModal')">✕</button></div><div class="modal-content"><div id="projectsListContent"></div></div></div></div>
+<div class="modal-overlay" id="dbPointsModal"><div class="modal-box"><div class="modal-header"><span>📍 Mes Points</span><button class="modal-close" onclick="closeModal('dbPointsModal')">✕</button></div><div class="modal-content"><div id="pointsListContent"></div></div></div></div>
+<div class="modal-overlay" id="dbParamsModal"><div class="modal-box"><div class="modal-header"><span>⚙️ Paramètres Sauvegardés</span><button class="modal-close" onclick="closeModal('dbParamsModal')">✕</button></div><div class="modal-content"><div id="paramsListContent"></div></div></div></div>
+<div class="modal-overlay" id="batchModal"><div class="modal-box"><div class="modal-header"><span>📊 Transformation par lot</span><button class="modal-close" onclick="closeModal('batchModal')">✕</button></div><div class="modal-content"><div class="info-box">Importez un fichier CSV avec colonnes: Name,X,Y,Z</div><input type="file" id="batchFile" accept=".csv,.txt" style="width:100%;padding:8px;margin-top:10px"><button class="action-btn" onclick="processBatch()" style="margin-top:10px">🚀 Lancer transformation</button><div id="batchResults" style="margin-top:15px"></div></div></div></div>
+
+<footer class="app-footer">
+<div class="footer-content">
+<div class="footer-left">
+<div class="footer-logo-box"><svg class="subtopo-logo"><use href="#subtopo-logo"/></svg></div>
+<div><div class="footer-company-name">SubTopo Engineering</div><div class="footer-tagline">Topographic Solutions © 2025</div></div>
+</div>
+<div class="footer-center">
+<div class="footer-developed-by">✦ Conçu et développé par ✦</div>
+<div class="footer-author-name">NASRAOUI FATHI</div>
+</div>
+<div style="text-align:right">
+<div style="font-size:11px;color:#a7f3d0">Version</div>
+<div class="footer-version-number">v5.0 ⭐ PREMIUM</div>
+<div style="font-size:10px;color:#a7f3d0;margin-top:6px;font-style:italic">Coordinate Converter Pro</div>
+</div>
+</div>
+<div class="footer-bottom">🌍 FR/EN/AR • 🎯 Calcul 7-Param • 💾 Database • 🇹🇳 Tunisie • 🇩🇿 Algérie • 🇲🇦 Maroc</div>
+</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ DATABASE (IndexedDB) ============
+var db = null;
+var DB_NAME = 'SubTopoTransformDB';
+var DB_VERSION = 1;
+
+function initDatabase() {
+  var request = indexedDB.open(DB_NAME, DB_VERSION);
+  
+  request.onerror = function(e) {
+    console.error('Erreur DB:', e);
+    document.getElementById('dbStatus').textContent = 'Erreur ❌';
+    document.getElementById('dbStatus').style.color = '#ef4444';
+  };
+  
+  request.onsuccess = function(e) {
+    db = e.target.result;
+    document.getElementById('dbStatus').textContent = 'Connectée ✅';
+    document.getElementById('dbStatus').style.color = '#10b981';
+    updateDbStats();
+    console.log('✅ Base de données ouverte');
+  };
+  
+  request.onupgradeneeded = function(e) {
+    db = e.target.result;
+    
+    if (!db.objectStoreNames.contains('projects')) {
+      var projectStore = db.createObjectStore('projects', { keyPath: 'id', autoIncrement: true });
+      projectStore.createIndex('name', 'name', { unique: false });
+      projectStore.createIndex('date', 'date', { unique: false });
+    }
+    
+    if (!db.objectStoreNames.contains('points')) {
+      var pointStore = db.createObjectStore('points', { keyPath: 'id', autoIncrement: true });
+      pointStore.createIndex('projectId', 'projectId', { unique: false });
+      pointStore.createIndex('name', 'name', { unique: false });
+    }
+    
+    if (!db.objectStoreNames.contains('transformations')) {
+      var transStore = db.createObjectStore('transformations', { keyPath: 'id', autoIncrement: true });
+      transStore.createIndex('date', 'date', { unique: false });
+    }
+    
+    if (!db.objectStoreNames.contains('parameters')) {
+      var paramStore = db.createObjectStore('parameters', { keyPath: 'id', autoIncrement: true });
+      paramStore.createIndex('name', 'name', { unique: false });
+    }
+    
+    console.log('✅ Base de données créée');
+  };
+}
+
+function updateDbStats() {
+  if (!db) return;
+  ['projects','points','transformations','parameters'].forEach(function(storeName) {
+    var tx = db.transaction([storeName], 'readonly');
+    var store = tx.objectStore(storeName);
+    var req = store.count();
+    req.onsuccess = function() {
+      var id = 'stat_' + (storeName === 'transformations' ? 'transforms' : (storeName === 'parameters' ? 'params' : storeName));
+      var el = document.getElementById(id);
+      if (el) el.textContent = req.result;
+    };
+  });
+}
+
+// Sauvegarder point
+function savePointToDB() {
+  if (!db) { toast('❌ DB non disponible'); return; }
+  var point = {
+    name: document.getElementById('src_name').value || 'P' + Date.now(),
+    epsg: document.getElementById('src_epsg').value,
+    datum: document.getElementById('src_datum').value,
+    x: parseFloat(document.getElementById('src_x').value),
+    y: parseFloat(document.getElementById('src_y').value),
+    z: parseFloat(document.getElementById('src_z').value) || 0,
+    date: new Date().toISOString(),
+    projectId: 0
+  };
+  var tx = db.transaction(['points'], 'readwrite');
+  var store = tx.objectStore('points');
+  var req = store.add(point);
+  req.onsuccess = function() {
+    toast('✅ Point sauvegardé (ID: ' + req.result + ')');
+    updateDbStats();
+  };
+  req.onerror = function() { toast('❌ Erreur sauvegarde'); };
+}
+
+// Sauvegarder transformation
+function saveTransformToDB() {
+  if (!db) { toast('❌ DB non disponible'); return; }
+  var transform = {
+    name: document.getElementById('src_name').value,
+    src_epsg: document.getElementById('src_epsg').value,
+    src_x: parseFloat(document.getElementById('src_x').value),
+    src_y: parseFloat(document.getElementById('src_y').value),
+    src_z: parseFloat(document.getElementById('src_z').value),
+    tgt_epsg: document.getElementById('tgt_epsg').value,
+    tgt_x: parseFloat(document.getElementById('tgt_x').value),
+    tgt_y: parseFloat(document.getElementById('tgt_y').value),
+    tgt_z: parseFloat(document.getElementById('tgt_z').value),
+    delta_x: parseFloat(document.getElementById('delta_x').value),
+    delta_y: parseFloat(document.getElementById('delta_y').value),
+    date: new Date().toISOString()
+  };
+  var tx = db.transaction(['transformations'], 'readwrite');
+  var req = tx.objectStore('transformations').add(transform);
+  req.onsuccess = function() { toast('✅ Transformation sauvegardée'); updateDbStats(); };
+}
+
+// Sauvegarder paramètres
+function saveParamsToDB() {
+  if (!db) { toast('❌ DB non disponible'); return; }
+  var name = prompt('Nom des paramètres:', 'Custom ' + new Date().toLocaleDateString('fr-FR'));
+  if (!name) return;
+  var params = {
+    name: name,
+    src_epsg: document.getElementById('src_epsg').value,
+    tgt_epsg: document.getElementById('tgt_epsg').value,
+    x0: parseFloat(document.getElementById('param_x0').value),
+    y0: parseFloat(document.getElementById('param_y0').value),
+    z0: parseFloat(document.getElementById('param_z0').value),
+    ex: parseFloat(document.getElementById('param_ex').value),
+    ey: parseFloat(document.getElementById('param_ey').value),
+    ez: parseFloat(document.getElementById('param_ez').value),
+    m: parseFloat(document.getElementById('param_m').value),
+    date: new Date().toISOString()
+  };
+  var tx = db.transaction(['parameters'], 'readwrite');
+  var req = tx.objectStore('parameters').add(params);
+  req.onsuccess = function() { toast('✅ Paramètres sauvegardés: ' + name); updateDbStats(); };
+}
+
+// Créer projet
+function createNewProject() {
+  if (!db) { toast('❌ DB non disponible'); return; }
+  var name = document.getElementById('newProjectName').value.trim();
+  if (!name) { toast('❌ Saisir un nom'); return; }
+  var project = { name: name, date: new Date().toISOString(), description: '' };
+  var tx = db.transaction(['projects'], 'readwrite');
+  var req = tx.objectStore('projects').add(project);
+  req.onsuccess = function() {
+    toast('✅ Projet créé: ' + name);
+    document.getElementById('newProjectName').value = '';
+    loadProjects();
+    updateDbStats();
+  };
+}
+
+function loadProjects() {
+  if (!db) return;
+  var tx = db.transaction(['projects'], 'readonly');
+  var req = tx.objectStore('projects').getAll();
+  req.onsuccess = function() {
+    var tbody = document.getElementById('dbProjectsBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    req.result.forEach(function(p, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (i+1) + '</td><td>' + p.name + '</td><td>' + new Date(p.date).toLocaleString('fr-FR') + '</td><td>?</td><td><button class="action-btn action-btn-danger" onclick="deleteProject(' + p.id + ')" style="width:auto;padding:3px 8px;font-size:10px">🗑️</button></td>';
+      tbody.appendChild(tr);
+    });
+  };
+}
+
+function loadPoints() {
+  if (!db) return;
+  var tx = db.transaction(['points'], 'readonly');
+  var req = tx.objectStore('points').getAll();
+  req.onsuccess = function() {
+    var tbody = document.getElementById('dbPointsBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    req.result.forEach(function(p, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (i+1) + '</td><td>' + p.name + '</td><td>' + p.epsg + '</td><td>' + p.x.toFixed(3) + '</td><td>' + p.y.toFixed(3) + '</td><td>' + p.z.toFixed(3) + '</td><td>' + (p.projectId || '-') + '</td><td>' + new Date(p.date).toLocaleDateString('fr-FR') + '</td><td><button class="action-btn" onclick="loadPointToForm(' + p.id + ')" style="width:auto;padding:3px 8px;font-size:10px">📥</button> <button class="action-btn action-btn-danger" onclick="deletePoint(' + p.id + ')" style="width:auto;padding:3px 8px;font-size:10px">🗑️</button></td>';
+      tbody.appendChild(tr);
+    });
+  };
+}
+
+function loadTransformations() {
+  if (!db) return;
+  var tx = db.transaction(['transformations'], 'readonly');
+  var req = tx.objectStore('transformations').getAll();
+  req.onsuccess = function() {
+    var tbody = document.getElementById('dbTransformsBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    req.result.reverse().forEach(function(t, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (i+1) + '</td><td>' + t.name + '</td><td>' + t.src_epsg + '</td><td>' + t.tgt_epsg + '</td><td>' + t.tgt_x.toFixed(3) + '</td><td>' + t.tgt_y.toFixed(3) + '</td><td>' + new Date(t.date).toLocaleDateString('fr-FR') + '</td><td><button class="action-btn action-btn-danger" onclick="deleteTransform(' + t.id + ')" style="width:auto;padding:3px 8px;font-size:10px">🗑️</button></td>';
+      tbody.appendChild(tr);
+    });
+  };
+}
+
+function loadParams() {
+  if (!db) return;
+  var tx = db.transaction(['parameters'], 'readonly');
+  var req = tx.objectStore('parameters').getAll();
+  req.onsuccess = function() {
+    var tbody = document.getElementById('dbParamsBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    req.result.forEach(function(p, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + (i+1) + '</td><td>' + p.name + '</td><td>' + p.src_epsg + '</td><td>' + p.tgt_epsg + '</td><td>' + p.x0.toFixed(3) + '</td><td>' + p.y0.toFixed(3) + '</td><td>' + p.z0.toFixed(3) + '</td><td>' + p.m.toFixed(4) + '</td><td><button class="action-btn" onclick="applyParamsFromDB(' + p.id + ')" style="width:auto;padding:3px 8px;font-size:10px">📥</button> <button class="action-btn action-btn-danger" onclick="deleteParams(' + p.id + ')" style="width:auto;padding:3px 8px;font-size:10px">🗑️</button></td>';
+      tbody.appendChild(tr);
+    });
+  };
+}
+
+function deleteProject(id) {
+  if (!confirm('Supprimer ce projet ?')) return;
+  var tx = db.transaction(['projects'], 'readwrite');
+  tx.objectStore('projects').delete(id).onsuccess = function() { toast('✅ Supprimé'); loadProjects(); updateDbStats(); };
+}
+function deletePoint(id) {
+  if (!confirm('Supprimer ce point ?')) return;
+  var tx = db.transaction(['points'], 'readwrite');
+  tx.objectStore('points').delete(id).onsuccess = function() { toast('✅ Supprimé'); loadPoints(); updateDbStats(); };
+}
+function deleteTransform(id) {
+  if (!confirm('Supprimer ?')) return;
+  var tx = db.transaction(['transformations'], 'readwrite');
+  tx.objectStore('transformations').delete(id).onsuccess = function() { toast('✅ Supprimé'); loadTransformations(); updateDbStats(); };
+}
+function deleteParams(id) {
+  if (!confirm('Supprimer ?')) return;
+  var tx = db.transaction(['parameters'], 'readwrite');
+  tx.objectStore('parameters').delete(id).onsuccess = function() { toast('✅ Supprimé'); loadParams(); updateDbStats(); };
+}
+
+function loadPointToForm(id) {
+  var tx = db.transaction(['points'], 'readonly');
+  var req = tx.objectStore('points').get(id);
+  req.onsuccess = function() {
+    var p = req.result;
+    document.getElementById('src_name').value = p.name;
+    document.getElementById('src_epsg').value = p.epsg;
+    document.getElementById('src_x').value = p.x;
+    document.getElementById('src_y').value = p.y;
+    document.getElementById('src_z').value = p.z;
+    updateDatumFromEPSG('src');
+    closeModal('dbModal');
+    toast('✅ Point chargé');
+  };
+}
+
+function applyParamsFromDB(id) {
+  var tx = db.transaction(['parameters'], 'readonly');
+  var req = tx.objectStore('parameters').get(id);
+  req.onsuccess = function() {
+    var p = req.result;
+    document.getElementById('src_epsg').value = p.src_epsg;
+    document.getElementById('tgt_epsg').value = p.tgt_epsg;
+    document.getElementById('param_x0').value = p.x0;
+    document.getElementById('param_y0').value = p.y0;
+    document.getElementById('param_z0').value = p.z0;
+    document.getElementById('param_ex').value = p.ex;
+    document.getElementById('param_ey').value = p.ey;
+    document.getElementById('param_ez').value = p.ez;
+    document.getElementById('param_m').value = p.m;
+    updateDatumFromEPSG('src');
+    updateDatumFromEPSG('tgt');
+    closeModal('dbModal');
+    toast('✅ Paramètres chargés: ' + p.name);
+  };
+}
+
+function switchDbTab(tab) {
+  ['projects','points','transforms','params'].forEach(function(t) {
+    document.getElementById('dbTab' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = 'none';
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.getElementById('dbTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
+  event.target.classList.add('active');
+  
+  if (tab === 'projects') loadProjects();
+  else if (tab === 'points') loadPoints();
+  else if (tab === 'transforms') loadTransformations();
+  else if (tab === 'params') loadParams();
+}
+
+function clearDatabase() {
+  if (!confirm('⚠️ EFFACER TOUTE LA BASE DE DONNÉES ?\nCette action est irréversible !')) return;
+  if (!confirm('🔴 Vraiment sûr ? Toutes les données seront perdues !')) return;
+  ['projects','points','transformations','parameters'].forEach(function(store) {
+    var tx = db.transaction([store], 'readwrite');
+    tx.objectStore(store).clear();
+  });
+  toast('🗑️ Base de données effacée');
+  updateDbStats();
+  loadProjects();
+}
+
+function exportDatabase() {
+  if (!db) { toast('❌ DB non disponible'); return; }
+  var exportData = { exportDate: new Date().toISOString(), version: '5.0', data: {} };
+  var stores = ['projects','points','transformations','parameters'];
+  var loaded = 0;
+  
+  stores.forEach(function(storeName) {
+    var tx = db.transaction([storeName], 'readonly');
+    var req = tx.objectStore(storeName).getAll();
+    req.onsuccess = function() {
+      exportData.data[storeName] = req.result;
+      loaded++;
+      if (loaded === stores.length) {
+        downloadFile(JSON.stringify(exportData, null, 2), 'subtopo-database-' + Date.now() + '.json', 'application/json');
+        toast('✅ Base exportée');
+      }
+    };
+  });
+}
+
+function importDatabase() {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    var file = e.target.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        var data = JSON.parse(ev.target.result);
+        if (!data.data) throw new Error('Format invalide');
+        Object.keys(data.data).forEach(function(store) {
+          var tx = db.transaction([store], 'readwrite');
+          var os = tx.objectStore(store);
+          data.data[store].forEach(function(item) {
+            delete item.id;
+            os.add(item);
+          });
+        });
+        toast('✅ Base importée');
+        setTimeout(updateDbStats, 500);
+      } catch(err) { toast('❌ Erreur: ' + err.message); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+// ============ CALCUL 7-PARAMÈTRES (BURSA-WOLF) ============
+var commonPoints = [];
+
+function addCommonPoint() {
+  var idx = commonPoints.length + 1;
+  commonPoints.push({ name: 'P' + idx, x1: 0, y1: 0, z1: 0, x2: 0, y2: 0, z2: 0 });
+  renderCommonPoints();
+}
+
+function renderCommonPoints() {
+  var tbody = document.getElementById('commonPointsBody');
+  tbody.innerHTML = '';
+  commonPoints.forEach(function(p, i) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = 
+      '<td>' + (i+1) + '</td>' +
+      '<td><input type="text" value="' + p.name + '" onchange="commonPoints[' + i + '].name=this.value"></td>' +
+      '<td><input type="number" step="0.001" value="' + p.x1 + '" onchange="commonPoints[' + i + '].x1=parseFloat(this.value)"></td>' +
+      '<td><input type="number" step="0.001" value="' + p.y1 + '" onchange="commonPoints[' + i + '].y1=parseFloat(this.value)"></td>' +
+      '<td><input type="number" step="0.001" value="' + p.z1 + '" onchange="commonPoints[' + i + '].z1=parseFloat(this.value)"></td>' +
+      '<td><input type="number" step="0.001" value="' + p.x2 + '" onchange="commonPoints[' + i + '].x2=parseFloat(this.value)"></td>' +
+      '<td><input type="number" step="0.001" value="' + p.y2 + '" onchange="commonPoints[' + i + '].y2=parseFloat(this.value)"></td>' +
+      '<td><input type="number" step="0.001" value="' + p.z2 + '" onchange="commonPoints[' + i + '].z2=parseFloat(this.value)"></td>' +
+      '<td><button class="action-btn action-btn-danger" onclick="removeCommonPoint(' + i + ')" style="width:auto;padding:3px 8px;font-size:10px">✕</button></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function removeCommonPoint(idx) {
+  commonPoints.splice(idx, 1);
+  renderCommonPoints();
+}
+
+function clearCommonPoints() {
+  if (!confirm('Vider tous les points ?')) return;
+  commonPoints = [];
+  renderCommonPoints();
+  document.getElementById('results7Param').style.display = 'none';
+}
+
+function loadExamplePoints() {
+  commonPoints = [
+    { name: 'P1', x1: 500000.000, y1: 3700000.000, z1: 100.000, x2: 500087.000, y2: 3700098.000, z2: 221.000 },
+    { name: 'P2', x1: 510000.000, y1: 3710000.000, z1: 150.000, x2: 510087.000, y2: 3710098.000, z2: 271.000 },
+    { name: 'P3', x1: 505000.000, y1: 3705000.000, z1: 125.000, x2: 505087.000, y2: 3705098.000, z2: 246.000 },
+    { name: 'P4', x1: 515000.000, y1: 3715000.000, z1: 200.000, x2: 515087.000, y2: 3715098.000, z2: 321.000 }
+  ];
+  renderCommonPoints();
+  toast('✅ 4 points d\'exemple chargés');
+}
+
+// ============ ALGORITHME BURSA-WOLF (MOINDRES CARRÉS) ============
+function calculate7Parameters() {
+  if (commonPoints.length < 3) {
+    toast('❌ Minimum 3 points requis');
+    return;
+  }
+  
+  try {
+    var n = commonPoints.length;
+    
+    // Construire matrice A (3n × 7) et vecteur L (3n × 1)
+    // Pour chaque point: [X2-X1, Y2-Y1, Z2-Z1] = A * [X0, Y0, Z0, ex, ey, ez, m]
+    var A = [];
+    var L = [];
+    
+    for (var i = 0; i < n; i++) {
+      var p = commonPoints[i];
+      // Coefficients pour delta X
+      A.push([1, 0, 0, 0, -p.z1, p.y1, p.x1]);
+      L.push(p.x2 - p.x1);
+      // Coefficients pour delta Y
+      A.push([0, 1, 0, p.z1, 0, -p.x1, p.y1]);
+      L.push(p.y2 - p.y1);
+      // Coefficients pour delta Z
+      A.push([0, 0, 1, -p.y1, p.x1, 0, p.z1]);
+      L.push(p.z2 - p.z1);
+    }
+    
+    // Résoudre par moindres carrés: X = (A^T A)^-1 A^T L
+    var At = transpose(A);
+    var AtA = multiply(At, A);
+    var AtL = multiplyVec(At, L);
+    var AtA_inv = inverse(AtA);
+    var X = multiplyVec(AtA_inv, AtL);
+    
+    // X = [X0, Y0, Z0, ex, ey, ez, m]
+    var params = {
+      x0: X[0],
+      y0: X[1],
+      z0: X[2],
+      ex: X[3] * 206264.8062, // rad → arcsec
+      ey: X[4] * 206264.8062,
+      ez: X[5] * 206264.8062,
+      m: X[6] * 1000000 // ratio → ppm
+    };
+    
+    // Calculer résidus
+    var residuals = [];
+    var rmsTotal = 0;
+    
+    commonPoints.forEach(function(p) {
+      // Appliquer transformation calculée
+      var dx = params.x0 - (params.ez/206264.8062) * p.y1 + (params.ey/206264.8062) * p.z1 + (params.m/1000000) * p.x1;
+      var dy = params.y0 + (params.ez/206264.8062) * p.x1 - (params.ex/206264.8062) * p.z1 + (params.m/1000000) * p.y1;
+      var dz = params.z0 - (params.ey/206264.8062) * p.x1 + (params.ex/206264.8062) * p.y1 + (params.m/1000000) * p.z1;
+      
+      var x_calc = p.x1 + dx;
+      var y_calc = p.y1 + dy;
+      var z_calc = p.z1 + dz;
+      
+      var resX = p.x2 - x_calc;
+      var resY = p.y2 - y_calc;
+      var resZ = p.z2 - z_calc;
+      var resTot = Math.sqrt(resX*resX + resY*resY + resZ*resZ);
+      
+      residuals.push({ name: p.name, dx: resX, dy: resY, dz: resZ, total: resTot });
+      rmsTotal += resTot * resTot;
+    });
+    
+    var rms = Math.sqrt(rmsTotal / n);
+    
+    // Afficher résultats
+    document.getElementById('results7Param').style.display = 'block';
+    document.getElementById('calcSuccessMsg').innerHTML = '✅ Calcul réussi avec <b>' + n + ' points</b> par méthode des moindres carrés';
+    
+    var paramsBody = document.getElementById('paramsResultBody');
+    paramsBody.innerHTML = 
+      '<tr><td><b>X0 (translation X)</b></td><td>' + params.x0.toFixed(6) + '</td><td>m</td></tr>' +
+      '<tr><td><b>Y0 (translation Y)</b></td><td>' + params.y0.toFixed(6) + '</td><td>m</td></tr>' +
+      '<tr><td><b>Z0 (translation Z)</b></td><td>' + params.z0.toFixed(6) + '</td><td>m</td></tr>' +
+      '<tr><td><b>ex (rotation X)</b></td><td>' + params.ex.toFixed(8) + '</td><td>arcsec</td></tr>' +
+      '<tr><td><b>ey (rotation Y)</b></td><td>' + params.ey.toFixed(8) + '</td><td>arcsec</td></tr>' +
+      '<tr><td><b>ez (rotation Z)</b></td><td>' + params.ez.toFixed(8) + '</td><td>arcsec</td></tr>' +
+      '<tr><td><b>m (scale factor)</b></td><td>' + params.m.toFixed(6) + '</td><td>ppm</td></tr>';
+    
+    var resBody = document.getElementById('residualsBody');
+    resBody.innerHTML = '';
+    residuals.forEach(function(r) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + r.name + '</td><td>' + r.dx.toFixed(4) + '</td><td>' + r.dy.toFixed(4) + '</td><td>' + r.dz.toFixed(4) + '</td><td>' + r.total.toFixed(4) + '</td>';
+      resBody.appendChild(tr);
+    });
+    
+    document.getElementById('rmsResult').innerHTML = '📊 <b>RMS (Erreur quadratique moyenne):</b> ' + rms.toFixed(4) + ' m';
+    
+    // Stocker pour application
+    window.calculatedParams = params;
+    
+    toast('✅ 7-Paramètres calculés ! RMS = ' + rms.toFixed(3) + ' m');
+    
+  } catch(e) {
+    console.error(e);
+    toast('❌ Erreur calcul: ' + e.message);
+  }
+}
+
+function applyCalculatedParams() {
+  if (!window.calculatedParams) { toast('❌ Aucun calcul'); return; }
+  var p = window.calculatedParams;
+  document.getElementById('param_x0').value = p.x0.toFixed(6);
+  document.getElementById('param_y0').value = p.y0.toFixed(6);
+  document.getElementById('param_z0').value = p.z0.toFixed(6);
+  document.getElementById('param_ex').value = p.ex.toFixed(8);
+  document.getElementById('param_ey').value = p.ey.toFixed(8);
+  document.getElementById('param_ez').value = p.ez.toFixed(8);
+  document.getElementById('param_m').value = p.m.toFixed(6);
+  closeModal('calc7ParamModal');
+  toast('✅ Paramètres appliqués');
+}
+
+function saveCalculatedParams() {
+  if (!window.calculatedParams) { toast('❌ Aucun calcul'); return; }
+  applyCalculatedParams();
+  saveParamsToDB();
+}
+
+function exportCalculatedParams() {
+  if (!window.calculatedParams) { toast('❌ Aucun calcul'); return; }
+  applyCalculatedParams();
+  exportPDF();
+}
+
+// ============ ALGÈBRE LINÉAIRE ============
+function transpose(A) {
+  var rows = A.length, cols = A[0].length;
+  var T = [];
+  for (var j = 0; j < cols; j++) {
+    T[j] = [];
+    for (var i = 0; i < rows; i++) T[j][i] = A[i][j];
+  }
+  return T;
+}
+
+function multiply(A, B) {
+  var rA = A.length, cA = A[0].length, cB = B[0].length;
+  var R = [];
+  for (var i = 0; i < rA; i++) {
+    R[i] = [];
+    for (var j = 0; j < cB; j++) {
+      var s = 0;
+      for (var k = 0; k < cA; k++) s += A[i][k] * B[k][j];
+      R[i][j] = s;
+    }
+  }
+  return R;
+}
+
+function multiplyVec(A, v) {
+  var R = [];
+  for (var i = 0; i < A.length; i++) {
+    var s = 0;
+    for (var j = 0; j < v.length; j++) s += A[i][j] * v[j];
+    R[i] = s;
+  }
+  return R;
+}
+
+function inverse(M) {
+  var n = M.length;
+  var I = [];
+  var A = [];
+  for (var i = 0; i < n; i++) {
+    I[i] = []; A[i] = [];
+    for (var j = 0; j < n; j++) {
+      I[i][j] = i === j ? 1 : 0;
+      A[i][j] = M[i][j];
+    }
+  }
+  for (var i = 0; i < n; i++) {
+    var pivot = A[i][i];
+    if (Math.abs(pivot) < 1e-10) throw new Error('Matrice singulière');
+    for (var j = 0; j < n; j++) { A[i][j] /= pivot; I[i][j] /= pivot; }
+    for (var k = 0; k < n; k++) {
+      if (k !== i) {
+        var f = A[k][i];
+        for (var j = 0; j < n; j++) { A[k][j] -= f * A[i][j]; I[k][j] -= f * I[i][j]; }
+      }
+    }
+  }
+  return I;
+}
+
+// ============ EPSG SYSTEMS (même que avant) ============
+var EPSG_SYSTEMS = [
+  {epsg:4326, name:'WGS84 (Geographic)', datum:'WGS84', proj:'+proj=longlat +datum=WGS84 +no_defs', type:'geo'},
+  {epsg:4230, name:'ED50 (Geographic)', datum:'ED50', proj:'+proj=longlat +ellps=intl +towgs84=-87,-98,-121,0,0,0,0 +no_defs', type:'geo'},
+  {epsg:4258, name:'ETRS89 (Geographic)', datum:'ETRS89', proj:'+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs', type:'geo'},
+  {epsg:4269, name:'NAD83 (Geographic)', datum:'NAD83', proj:'+proj=longlat +ellps=GRS80 +datum=NAD83 +no_defs', type:'geo'}
+];
+
+for (var z = 1; z <= 60; z++) {
+  EPSG_SYSTEMS.push({epsg: 32600+z, name:'WGS84 / UTM '+z+'N', datum:'WGS84', proj:'+proj=utm +zone='+z+' +datum=WGS84 +units=m +no_defs', type:'proj'});
+}
+for (var z = 1; z <= 60; z++) {
+  EPSG_SYSTEMS.push({epsg: 32700+z, name:'WGS84 / UTM '+z+'S', datum:'WGS84', proj:'+proj=utm +zone='+z+' +south +datum=WGS84 +units=m +no_defs', type:'proj'});
+}
+for (var z = 28; z <= 38; z++) {
+  EPSG_SYSTEMS.push({epsg: 23000+z, name:'ED50 / UTM '+z+'N', datum:'ED50', proj:'+proj=utm +zone='+z+' +ellps=intl +towgs84=-87,-98,-121,0,0,0,0 +units=m +no_defs', type:'proj'});
+}
+
+EPSG_SYSTEMS.push(
+  {epsg:22332, name:'🇹🇳 Carthage / UTM 32N', datum:'Carthage', proj:'+proj=utm +zone=32 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs', type:'proj'},
+  {epsg:22391, name:'🇹🇳 Carthage / NTT', datum:'Carthage', proj:'+proj=lcc +lat_1=36 +lat_0=36 +lon_0=10 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs', type:'proj'},
+  {epsg:22392, name:'🇹🇳 Carthage / STT', datum:'Carthage', proj:'+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=10 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=-263,6,431,0,0,0,0 +units=m +no_defs', type:'proj'},
+  {epsg:30491, name:'🇩🇿 Nord Sahara Nord', datum:'Nord_Sahara', proj:'+proj=lcc +lat_1=36 +lat_0=36 +lon_0=2.7 +k_0=0.999625544 +x_0=500135 +y_0=300090 +ellps=clrk80ign +towgs84=-186,-93,310,0,0,0,0 +units=m +no_defs', type:'proj'},
+  {epsg:26191, name:'🇲🇦 Merchich Nord', datum:'Merchich', proj:'+proj=lcc +lat_1=33.3 +lat_0=33.3 +lon_0=-5.4 +k_0=0.999625769 +x_0=500000 +y_0=300000 +ellps=clrk80ign +towgs84=31,146,47,0,0,0,0 +units=m +no_defs', type:'proj'},
+  {epsg:2154, name:'🇫🇷 RGF93 / Lambert-93', datum:'RGF93', proj:'+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +units=m +no_defs', type:'proj'},
+  {epsg:27700, name:'🇬🇧 OSGB36', datum:'OSGB36', proj:'+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +towgs84=446.448,-125.157,542.06,0.15,0.247,0.842,-20.489 +units=m +no_defs', type:'proj'}
+);
+
+var DATUMS = [
+  {v:'WGS84', t:'WGS84', e:'WGS84', r:'Mondial'},
+  {v:'ED50', t:'ED50 (Int. 1924)', e:'International 1924', r:'Europe'},
+  {v:'ETRS89', t:'ETRS89 (GRS80)', e:'GRS80', r:'Europe'},
+  {v:'NAD83', t:'NAD83', e:'GRS80', r:'Amérique'},
+  {v:'Carthage', t:'🇹🇳 Carthage (Clarke 1880)', e:'Clarke 1880 IGN', r:'Tunisie'},
+  {v:'Nord_Sahara', t:'🇩🇿 Nord Sahara 1959', e:'Clarke 1880', r:'Algérie'},
+  {v:'Merchich', t:'🇲🇦 Merchich', e:'Clarke 1880', r:'Maroc'},
+  {v:'OSGB36', t:'🇬🇧 OSGB36', e:'Airy 1830', r:'UK'}
+];
+
+var PARAM_PRESETS = [
+  {v:'null', t:'Null', x:0, y:0, z:0},
+  {v:'ed50_wgs84', t:'ED50 → WGS84', x:-87, y:-98, z:-121},
+  {v:'carthage_wgs84', t:'🇹🇳 Carthage → WGS84', x:-263, y:6, z:431},
+  {v:'nord_sahara_wgs84', t:'🇩🇿 Nord Sahara → WGS84', x:-186, y:-93, z:310},
+  {v:'merchich_wgs84', t:'🇲🇦 Merchich → WGS84', x:31, y:146, z:47},
+  {v:'custom', t:'⚙️ Custom', x:0, y:0, z:0}
+];
+
+function getSystemByEPSG(epsg) { return EPSG_SYSTEMS.find(function(s) { return s.epsg === parseInt(epsg); }); }
+function getDatumInfo(name) { return DATUMS.find(function(d) { return d.v === name; }); }
+
+function updateDatumFromEPSG(side) {
+  var sys = getSystemByEPSG(document.getElementById(side+'_epsg').value);
+  if (sys) {
+    var d = getDatumInfo(sys.datum);
+    document.getElementById(side+'_datum').value = d ? d.t : sys.datum;
+    var sysSel = document.getElementById(side+'_system');
+    for (var i = 0; i < sysSel.options.length; i++) if (sysSel.options[i].value == sys.epsg) { sysSel.selectedIndex = i; break; }
+  }
+}
+function onSrcSystemChange() { document.getElementById('src_epsg').value = document.getElementById('src_system').value; updateDatumFromEPSG('src'); }
+function onTgtSystemChange() { document.getElementById('tgt_epsg').value = document.getElementById('tgt_system').value; updateDatumFromEPSG('tgt'); }
+
+function performTransform() {
+  try {
+    var srcEpsg = document.getElementById('src_epsg').value;
+    var tgtEpsg = document.getElementById('tgt_epsg').value;
+    var srcSys = getSystemByEPSG(srcEpsg);
+    var tgtSys = getSystemByEPSG(tgtEpsg);
+    if (!srcSys) { toast('❌ EPSG source ' + srcEpsg + ' inconnu'); return; }
+    if (!tgtSys) { toast('❌ EPSG cible ' + tgtEpsg + ' inconnu'); return; }
+    proj4.defs('EPSG:'+srcEpsg, srcSys.proj);
+    proj4.defs('EPSG:'+tgtEpsg, tgtSys.proj);
+    var x = parseFloat(document.getElementById('src_x').value);
+    var y = parseFloat(document.getElementById('src_y').value);
+    var z = parseFloat(document.getElementById('src_z').value) || 0;
+    if (isNaN(x) || isNaN(y)) { toast('❌ Saisir X et Y'); return; }
+    if (srcEpsg === tgtEpsg) {
+      document.getElementById('tgt_x').value = x.toFixed(4);
+      document.getElementById('tgt_y').value = y.toFixed(4);
+      document.getElementById('tgt_z').value = z.toFixed(4);
+      document.getElementById('delta_x').value = '0.0000';
+      document.getElementById('delta_y').value = '0.0000';
+      toast('⚠️ EPSG identiques');
+      return;
+    }
+    var result = proj4('EPSG:'+srcEpsg, 'EPSG:'+tgtEpsg, [x, y]);
+    var srcD = getDatumInfo(srcSys.datum), tgtD = getDatumInfo(tgtSys.datum);
+    var zResult = z;
+    var lonLat;
+    if (tgtSys.type === 'geo') lonLat = [result[0], result[1]];
+    else {
+      try { proj4.defs('EPSG:4326', '+proj=longlat +datum=WGS84 +no_defs'); lonLat = proj4('EPSG:'+tgtEpsg, 'EPSG:4326', result); }
+      catch(e) { lonLat = [0,0]; }
+    }
+    document.getElementById('tgt_name').value = document.getElementById('src_name').value || 'P1';
+    document.getElementById('tgt_x').value = result[0].toFixed(4);
+    document.getElementById('tgt_y').value = result[1].toFixed(4);
+    document.getElementById('tgt_z').value = zResult.toFixed(4);
+    document.getElementById('delta_x').value = (result[0]-x).toFixed(4);
+    document.getElementById('delta_y').value = (result[1]-y).toFixed(4);
+    document.getElementById('tgt_lon_dec').value = lonLat[0].toFixed(7);
+    document.getElementById('tgt_lat_dec').value = lonLat[1].toFixed(7);
+    addToLog('TRANSFORM', srcSys.name+' → '+tgtSys.name, 'X='+x+' Y='+y+' → X='+result[0].toFixed(4)+' Y='+result[1].toFixed(4));
+    toast('✅ ΔX='+(result[0]-x).toFixed(2)+'m, ΔY='+(result[1]-y).toFixed(2)+'m');
+  } catch(e) { console.error(e); toast('❌ '+e.message); }
+}
+
+// ============ FONCTIONS COMMUNES ============
+var currentLang = localStorage.getItem('transform_lang') || 'fr';
+var transformationLog = JSON.parse(localStorage.getItem('transform_log') || '[]');
+var toastTimeout = null;
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('transform_lang', lang);
+  document.body.classList.toggle('rtl', lang === 'ar');
+  document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.lang === lang); });
+}
+
+function tryLogin() {
+  var input = document.getElementById('pwdInput');
+  var err = document.getElementById('pwdError');
+  if (input.value.trim() === 'Subtopo@2025') {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('appContainer').classList.add('visible');
+    err.textContent = '';
+    setTimeout(function() { toast('✅ Bienvenue dans PREMIUM !'); }, 300);
+  } else {
+    err.textContent = '❌ Mot de passe incorrect';
+    input.value = '';
+    setTimeout(function() { err.textContent = ''; }, 3000);
+  }
+}
+
+function logout() { if (confirm('Quitter ?')) { document.getElementById('loginOverlay').classList.remove('hidden'); document.getElementById('appContainer').classList.remove('visible'); } }
+
+function toast(msg, duration) {
+  duration = duration || 3000;
+  var t = document.getElementById('toast');
+  if (toastTimeout) clearTimeout(toastTimeout);
+  t.classList.remove('show');
+  t.textContent = msg;
+  setTimeout(function() { t.classList.add('show'); }, 50);
+  toastTimeout = setTimeout(function() { t.classList.remove('show'); }, duration);
+}
+
+function toggleMenu(menuId, element) {
+  var wasOpen = document.getElementById(menuId).classList.contains('show');
+  closeAllMenus();
+  if (!wasOpen) {
+    var menu = document.getElementById(menuId);
+    var rect = element.getBoundingClientRect();
+    menu.style.top = (rect.bottom + 2) + 'px';
+    menu.style.left = rect.left + 'px';
+    menu.classList.add('show');
+  }
+}
+function closeAllMenus() { document.querySelectorAll('.menu-dropdown').forEach(function(m) { m.classList.remove('show'); }); }
+document.addEventListener('click', function(e) { if (!e.target.closest('.menu-item') && !e.target.closest('.menu-dropdown')) closeAllMenus(); });
+function showModal(id) { document.getElementById(id).classList.add('show'); closeAllMenus(); if (id === 'dbModal') { updateDbStats(); loadProjects(); } }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function addToLog(action, params, result) {
+  transformationLog.unshift({date: new Date().toISOString(), action: action, params: params, result: result});
+  if (transformationLog.length > 100) transformationLog = transformationLog.slice(0, 100);
+  localStorage.setItem('transform_log', JSON.stringify(transformationLog));
+}
+function updateLogDisplay() {
+  var el = document.getElementById('logfile_content');
+  if (!transformationLog.length) { el.textContent = '[Aucune entrée]'; return; }
+  el.textContent = transformationLog.map(function(e) { return '[' + new Date(e.date).toLocaleString('fr-FR') + '] ' + e.action + '\n  ' + e.params + '\n  ' + e.result; }).join('\n\n');
+}
+function showLog() { showModal('logfileModal'); updateLogDisplay(); }
+function showLogfile() { showLog(); }
+
+function newFile() { if (confirm('Nouveau ?')) { document.querySelectorAll('input:not([readonly])').forEach(function(i){ if(i.type!=='password') i.value=''; }); toast('📄 Nouveau'); } closeAllMenus(); }
+function newInput() { document.querySelectorAll('.panel-content input:not([readonly])').forEach(function(i) { i.value = ''; }); }
+function openFile() { document.getElementById('fileOpen').click(); }
+function saveFile() { var data={}; document.querySelectorAll('input,select').forEach(function(i){ if(i.id) data[i.id]=i.value; }); downloadFile(JSON.stringify(data,null,2),'subtopo.json','application/json'); toast('✅ Sauvegardé'); closeAllMenus(); }
+
+function swapSystems() {
+  var s = document.getElementById('src_epsg').value;
+  document.getElementById('src_epsg').value = document.getElementById('tgt_epsg').value;
+  document.getElementById('tgt_epsg').value = s;
+  updateDatumFromEPSG('src'); updateDatumFromEPSG('tgt');
+  toast('🔄 Échangé');
+}
+function resetAll() { if (!confirm('Reset?')) return; document.querySelectorAll('input:not([readonly])').forEach(function(i){ i.value=''; }); toast('🔁'); }
+function clearAllFields() { if(!confirm('Effacer?')) return; document.querySelectorAll('input:not([readonly])').forEach(function(i){ if(i.type!=='password') i.value=''; }); closeAllMenus(); }
+function loadDefaultTunisia() { document.getElementById('src_epsg').value='22332'; document.getElementById('src_x').value='500000'; document.getElementById('src_y').value='3700000'; document.getElementById('src_z').value='100'; document.getElementById('tgt_epsg').value='32632'; updateDatumFromEPSG('src'); updateDatumFromEPSG('tgt'); toast('🇹🇳'); closeAllMenus(); }
+function loadDefaultAlgeria() { document.getElementById('src_epsg').value='30491'; document.getElementById('src_x').value='500000'; document.getElementById('src_y').value='300000'; document.getElementById('tgt_epsg').value='32631'; updateDatumFromEPSG('src'); updateDatumFromEPSG('tgt'); toast('🇩🇿'); closeAllMenus(); }
+function loadExampleED50() { document.getElementById('src_epsg').value='23034'; document.getElementById('src_x').value='375046.3723'; document.getElementById('src_y').value='3289159.6498'; document.getElementById('src_z').value='-26.9750'; document.getElementById('tgt_epsg').value='32634'; updateDatumFromEPSG('src'); updateDatumFromEPSG('tgt'); toast('🇪🇺'); closeAllMenus(); }
+function inverseTransform() { swapSystems(); performTransform(); closeAllMenus(); }
+function selectEPSG(epsg, target) { document.getElementById(target+'_epsg').value = epsg; updateDatumFromEPSG(target); closeModal('epsgModal'); toast('✅ '+epsg); }
+function filterEPSG() { var s = document.getElementById('epsg_search').value.toLowerCase(); document.querySelectorAll('#epsg_tbody tr').forEach(function(r) { r.style.display = r.textContent.toLowerCase().includes(s)?'':'none'; }); }
+function loadPreset(p) { var pp=PARAM_PRESETS.find(function(x){return x.v===p;}); if(pp){ document.getElementById('param_x0').value=pp.x; document.getElementById('param_y0').value=pp.y; document.getElementById('param_z0').value=pp.z; closeModal('sevenParamModal'); toast('✅'); } }
+function loadParamPreset() { var v=document.getElementById('param_preset').value; if(v!=='custom') loadPreset(v); }
+function findUTMZone() { var lon=parseFloat(document.getElementById('utm_lon').value), lat=parseFloat(document.getElementById('utm_lat').value); if(isNaN(lon)||isNaN(lat)){toast('❌');return;} var z=Math.floor((lon+180)/6)+1, h=lat>=0?'N':'S', e=lat>=0?32600+z:32700+z; document.getElementById('utm_result').style.display='block'; document.getElementById('utm_result').innerHTML='<b>Zone:</b> '+z+h+'<br><b>EPSG:</b> '+e; }
+function googleEarth() { var lon=document.getElementById('tgt_lon_dec').value||10, lat=document.getElementById('tgt_lat_dec').value||36; window.open('https://earth.google.com/web/@'+lat+','+lon+',1000a,1000d'); closeAllMenus(); }
+function showOnMap() { var lon=document.getElementById('tgt_lon_dec').value||10, lat=document.getElementById('tgt_lat_dec').value||36; window.open('https://www.google.com/maps/@'+lat+','+lon+',15z'); closeAllMenus(); }
+function downloadFile(c,f,m) { var b=new Blob([c],{type:m}); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download=f; a.click(); URL.revokeObjectURL(u); }
+
+function exportPDF() {
+  if (!window.jspdf) { toast('❌'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF();
+  doc.setFillColor(16,185,129); doc.rect(0,0,210,40,'F');
+  doc.setFillColor(13,52,47); doc.rect(0,40,210,3,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(20); doc.setFont('helvetica','bold');
+  doc.text('SubTopo Transform v5.0 PREMIUM', 15, 18);
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text('Rapport de Transformation', 15, 27);
+  doc.setFontSize(9);
+  doc.text('NASRAOUI FATHI | (C) 2025 SubTopo Engineering', 15, 35);
+  var y = 55;
+  doc.setTextColor(0,0,0); doc.setFontSize(10);
+  doc.text('Date: '+new Date().toLocaleString('fr-FR'), 15, y); y+=10;
+  doc.setFillColor(16,185,129); doc.rect(15,y,180,8,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('SOURCE', 20, y+6); y+=12;
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+  doc.text('EPSG: '+document.getElementById('src_epsg').value, 20, y); y+=6;
+  doc.text('X: '+document.getElementById('src_x').value+' m', 20, y); y+=6;
+  doc.text('Y: '+document.getElementById('src_y').value+' m', 20, y); y+=6;
+  doc.text('Z: '+document.getElementById('src_z').value+' m', 20, y); y+=12;
+  doc.setFillColor(245,158,11); doc.rect(15,y,180,8,'F');
+  doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text('CIBLE (RESULTAT)', 20, y+6); y+=12;
+  doc.setTextColor(0,0,0); doc.setFont('helvetica','normal');
+  doc.text('EPSG: '+document.getElementById('tgt_epsg').value, 20, y); y+=6;
+  doc.text('X: '+document.getElementById('tgt_x').value+' m', 20, y); y+=6;
+  doc.text('Y: '+document.getElementById('tgt_y').value+' m', 20, y); y+=6;
+  doc.text('Z: '+document.getElementById('tgt_z').value+' m', 20, y); y+=12;
+  doc.setDrawColor(16,185,129); doc.setLineWidth(1);
+  doc.setFillColor(240,253,250); doc.roundedRect(15,y,180,20,3,3,'FD');
+  doc.setTextColor(16,185,129); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text('Transformation reussie', 105, y+13, {align:'center'});
+  doc.setFillColor(13,52,47); doc.rect(0,283,210,14,'F');
+  doc.setFontSize(8); doc.setTextColor(167,243,208);
+  doc.text('SubTopo Engineering - NASRAOUI FATHI - (C) 2025', 105, 290, {align:'center'});
+  doc.save('subtopo-'+Date.now()+'.pdf');
+  toast('✅ PDF');
+  closeAllMenus();
+}
+
+function exportCSV() {
+  var c = '# SubTopo Transform v5.0 PREMIUM\n# Date: '+new Date().toLocaleString('fr-FR')+'\n\n';
+  c += 'Field,Value\n';
+  c += 'Source_EPSG,'+document.getElementById('src_epsg').value+'\n';
+  c += 'Source_X,'+document.getElementById('src_x').value+'\n';
+  c += 'Source_Y,'+document.getElementById('src_y').value+'\n';
+  c += 'Source_Z,'+document.getElementById('src_z').value+'\n';
+  c += 'Target_EPSG,'+document.getElementById('tgt_epsg').value+'\n';
+  c += 'Target_X,'+document.getElementById('tgt_x').value+'\n';
+  c += 'Target_Y,'+document.getElementById('tgt_y').value+'\n';
+  c += 'Target_Z,'+document.getElementById('tgt_z').value+'\n';
+  downloadFile(c, 'subtopo-'+Date.now()+'.csv', 'text/csv');
+  toast('✅ CSV');
+  closeAllMenus();
+}
+
+function exportDXF() {
+  var dxf = '0\nSECTION\n2\nENTITIES\n';
+  var x=parseFloat(document.getElementById('tgt_x').value), y=parseFloat(document.getElementById('tgt_y').value), z=parseFloat(document.getElementById('tgt_z').value)||0;
+  if (!isNaN(x) && !isNaN(y)) dxf += '0\nPOINT\n8\n0\n10\n'+x+'\n20\n'+y+'\n30\n'+z+'\n';
+  dxf += '0\nENDSEC\n0\nEOF\n';
+  downloadFile(dxf, 'subtopo-'+Date.now()+'.dxf', 'application/dxf');
+  toast('✅ DXF');
+  closeAllMenus();
+}
+
+function processBatch() {
+  var file = document.getElementById('batchFile').files[0];
+  if (!file) { toast('❌ Choisir un fichier'); return; }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var lines = e.target.result.split('\n').filter(function(l) { return l.trim(); });
+    var results = [];
+    var srcEpsg = document.getElementById('src_epsg').value;
+    var tgtEpsg = document.getElementById('tgt_epsg').value;
+    var srcSys = getSystemByEPSG(srcEpsg);
+    var tgtSys = getSystemByEPSG(tgtEpsg);
+    proj4.defs('EPSG:'+srcEpsg, srcSys.proj);
+    proj4.defs('EPSG:'+tgtEpsg, tgtSys.proj);
+    
+    lines.forEach(function(line, i) {
+      if (i === 0 && isNaN(parseFloat(line.split(',')[1]))) return; // skip header
+      var parts = line.split(',');
+      if (parts.length < 3) return;
+      var name = parts[0];
+      var x = parseFloat(parts[1]);
+      var y = parseFloat(parts[2]);
+      var z = parts[3] ? parseFloat(parts[3]) : 0;
+      try {
+        var r = proj4('EPSG:'+srcEpsg, 'EPSG:'+tgtEpsg, [x, y]);
+        results.push({name: name, srcX: x, srcY: y, srcZ: z, tgtX: r[0], tgtY: r[1], tgtZ: z});
+      } catch(err) {}
+    });
+    
+    var html = '<table class="data-table"><thead><tr><th>Point</th><th>X cible</th><th>Y cible</th><th>Z cible</th></tr></thead><tbody>';
+    results.forEach(function(r) { html += '<tr><td>'+r.name+'</td><td>'+r.tgtX.toFixed(4)+'</td><td>'+r.tgtY.toFixed(4)+'</td><td>'+r.tgtZ.toFixed(4)+'</td></tr>'; });
+    html += '</tbody></table>';
+    document.getElementById('batchResults').innerHTML = html;
+    toast('✅ '+results.length+' points transformés');
+  };
+  reader.readAsText(file);
+}
+
+function populateDropdowns() {
+  ['src_system','tgt_system'].forEach(function(id) {
+    var sel = document.getElementById(id); sel.innerHTML = '';
+    EPSG_SYSTEMS.forEach(function(s) { var o = document.createElement('option'); o.value = s.epsg; o.textContent = 'EPSG:'+s.epsg+' - '+s.name; sel.appendChild(o); });
+  });
+  var paramSel = document.getElementById('param_preset'); paramSel.innerHTML = '';
+  PARAM_PRESETS.forEach(function(p) { var o = document.createElement('option'); o.value = p.v; o.textContent = p.t; paramSel.appendChild(o); });
+  var paramBody = document.getElementById('paramTableBody'); paramBody.innerHTML = '';
+  PARAM_PRESETS.filter(function(p){return p.v!=='custom';}).forEach(function(p) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+p.t+'</td><td>'+p.x+'</td><td>'+p.y+'</td><td>'+p.z+'</td><td><button class="action-btn" onclick="loadPreset(\''+p.v+'\')" style="width:auto;padding:4px 8px;font-size:10px">Charger</button></td>';
+    paramBody.appendChild(tr);
+  });
+  var epsgBody = document.getElementById('epsg_tbody'); epsgBody.innerHTML = '';
+  EPSG_SYSTEMS.forEach(function(e) {
+    var tr = document.createElement('tr');
+    if (e.name.indexOf('🇹🇳')>=0) tr.style.background = '#fef3c7';
+    tr.innerHTML = '<td>'+e.epsg+'</td><td>'+e.name+'</td><td><button class="action-btn" onclick="selectEPSG('+e.epsg+',\'src\')" style="width:auto;padding:4px;font-size:10px">→Src</button> <button class="action-btn" onclick="selectEPSG('+e.epsg+',\'tgt\')" style="width:auto;padding:4px;font-size:10px">→Tgt</button></td>';
+    epsgBody.appendChild(tr);
+  });
+  var datumBody = document.getElementById('datumTableBody'); datumBody.innerHTML = '';
+  DATUMS.forEach(function(d) {
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td>'+d.t+'</td><td>'+d.e+'</td><td>'+d.r+'</td>';
+    datumBody.appendChild(tr);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  setLang(currentLang);
+  populateDropdowns();
+  updateDatumFromEPSG('src');
+  updateDatumFromEPSG('tgt');
+  initDatabase();
+  
+  // Ajouter 3 points par défaut pour calcul 7-param
+  for (var i = 0; i < 3; i++) addCommonPoint();
+  
+  document.getElementById('loginBtn').addEventListener('click', tryLogin);
+  document.getElementById('pwdInput').addEventListener('keypress', function(e) { if (e.key === 'Enter') tryLogin(); });
+  document.getElementById('pwdInput').focus();
+  
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAllMenus();
+    if (e.key === 'F5') { e.preventDefault(); performTransform(); }
+  });
+});
+</script>
+</body>
+</html>
