@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>SubTopo-Geodetic-Coordinate Convers ⭐ PREMIUM</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dxf-parser/1.0.12/dxf-parser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,sans-serif}
+body{background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);min-height:100vh;color:#fff;overflow-x:hidden}
+
+/* ===== TOP BAR ===== */
+.topbar{background:linear-gradient(90deg,#1a2980,#26d0ce);padding:8px 15px;display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #ffd700;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.topbar h1{font-size:18px;color:#ffd700;text-shadow:1px 1px 2px #000}
+.topbar .ver{background:#ffd700;color:#000;padding:3px 10px;border-radius:12px;font-weight:bold;font-size:12px}
+.topbar .lock{background:#27ae60;color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:12px;border:none;font-weight:bold}
+
+/* ===== MENU BAR (File Edit etc.) ===== */
+.menubar{background:#2c3e50;display:flex;border-bottom:1px solid #ffd700;position:relative;z-index:100}
+.menu-item{position:relative}
+.menu-btn{background:transparent;color:#fff;border:none;padding:8px 14px;cursor:pointer;font-size:13px;transition:.2s}
+.menu-btn:hover,.menu-btn.active{background:#ffd700;color:#000}
+.dropdown{display:none;position:absolute;top:100%;left:0;background:#34495e;min-width:220px;border:1px solid #ffd700;box-shadow:0 5px 15px rgba(0,0,0,.5);z-index:1000}
+.dropdown.show{display:block}
+.dropdown a{display:block;padding:8px 15px;color:#fff;text-decoration:none;font-size:13px;border-bottom:1px solid #2c3e50;cursor:pointer}
+.dropdown a:hover{background:#ffd700;color:#000}
+.dropdown .sep{height:1px;background:#ffd700;margin:3px 0}
+
+/* ===== TOOLBAR ===== */
+.toolbar{background:#1e2a38;padding:5px 10px;display:flex;gap:5px;flex-wrap:wrap;border-bottom:1px solid #34495e}
+.tbtn{background:#34495e;color:#fff;border:1px solid #555;padding:5px 10px;cursor:pointer;font-size:12px;border-radius:3px;transition:.2s;display:inline-flex;align-items:center;gap:4px}
+.tbtn:hover{background:#ffd700;color:#000}
+.tbtn.star{background:linear-gradient(135deg,#ffd700,#f39c12);color:#000;font-weight:bold}
+.tbtn.danger{background:#e74c3c;color:#fff}
+
+/* ===== MAIN LAYOUT ===== */
+.main{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;padding:10px;background:#1e2a38;min-height:calc(100vh - 200px)}
+.panel{background:#2c3e50;border:2px solid #3498db;border-radius:8px;padding:12px}
+.panel h3{color:#ffd700;font-size:15px;margin-bottom:10px;border-bottom:1px solid #ffd700;padding-bottom:5px}
+.fg{margin-bottom:8px}
+.fg label{display:block;font-size:12px;color:#bdc3c7;margin-bottom:3px}
+.fg input,.fg select{width:100%;padding:6px;background:#1e2a38;color:#fff;border:1px solid #555;border-radius:4px;font-size:13px}
+.fg input:focus,.fg select:focus{outline:none;border-color:#ffd700}
+.coordgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.center-col{background:#34495e;padding:10px;border-radius:8px;min-width:280px;border:2px solid #e67e22}
+.center-col h3{color:#ffd700;text-align:center;font-size:14px;margin-bottom:8px}
+.paramgrid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.result-box{background:#1e2a38;border:2px solid #27ae60;border-radius:6px;padding:10px;margin-top:8px}
+.result-box h4{color:#2ecc71;font-size:13px;margin-bottom:6px}
+.btn{padding:7px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:bold;transition:.2s;margin:2px;display:inline-flex;align-items:center;gap:4px}
+.btn-p{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-s{background:linear-gradient(135deg,#11998e,#38ef7d);color:#fff}
+.btn-d{background:linear-gradient(135deg,#eb3349,#f45c43);color:#fff}
+.btn-i{background:linear-gradient(135deg,#4facfe,#00f2fe);color:#fff}
+.btn-g{background:#ffd700;color:#000}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.info-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px dotted #555}
+
+/* ===== STATUS BAR ===== */
+.statusbar{background:#000;color:#ffd700;padding:5px 15px;display:flex;justify-content:space-between;font-size:12px;border-top:2px solid #ffd700}
+.statusbar .db-status{background:#27ae60;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px}
+
+/* ===== MODAL ===== */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:2000;justify-content:center;align-items:center;padding:20px}
+.modal.active{display:flex}
+.modal-c{background:#2c3e50;border:3px solid #ffd700;border-radius:10px;max-width:1100px;width:100%;max-height:92vh;overflow-y:auto;padding:20px;position:relative;color:#fff;box-shadow:0 10px 40px rgba(0,0,0,.8)}
+.modal-x{position:absolute;top:10px;right:10px;background:#e74c3c;color:#fff;border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;z-index:10}
+.modal h2{color:#ffd700;margin-bottom:15px;padding-bottom:8px;border-bottom:2px solid #ffd700}
+
+/* ===== TABLES ===== */
+.tbl{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+.tbl th,.tbl td{border:1px solid #555;padding:6px;text-align:left}
+.tbl th{background:#1a2980;color:#ffd700;font-weight:bold}
+.tbl tr:nth-child(even){background:#34495e}
+.tbl tr:hover{background:#4a6278}
+.tbl input,.tbl select{width:100%;background:#1e2a38;color:#fff;border:1px solid #555;padding:3px;border-radius:3px;font-size:11px}
+.edit-cell{background:#fff3cd;color:#000;cursor:pointer;font-weight:bold}
+.edit-cell:hover{background:#ffe69c}
+
+/* ===== DROP ZONE ===== */
+.drop-zone{border:3px dashed #ffd700;border-radius:8px;padding:30px;text-align:center;background:#1e2a38;cursor:pointer;margin:10px 0;transition:.3s}
+.drop-zone:hover,.drop-zone.drag{background:#34495e;border-color:#2ecc71;transform:scale(1.01)}
+
+/* ===== BADGES ===== */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+.badge-ok{background:#27ae60;color:#fff}
+.badge-info{background:#3498db;color:#fff}
+
+/* ===== STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
+.stat-box{background:#1e2a38;padding:10px;border-radius:6px;text-align:center;border:1px solid #ffd700}
+.stat-box .num{font-size:22px;font-weight:bold;color:#ffd700}
+.stat-box .lbl{font-size:11px;color:#bdc3c7}
+
+/* ===== TABS ===== */
+.tabs{display:flex;gap:3px;margin-bottom:10px;border-bottom:2px solid #ffd700;flex-wrap:wrap}
+.tab{padding:6px 12px;background:#34495e;color:#fff;cursor:pointer;border-radius:4px 4px 0 0;font-size:12px;border:none}
+.tab.active{background:#ffd700;color:#000;font-weight:bold}
+
+/* ===== PROFESSIONAL PLAN ===== */
+.prof-plan{background:#fff;color:#000;border:3px solid #000;padding:20px;position:relative;min-height:700px;margin-top:15px}
+.plan-title{position:absolute;bottom:0;right:0;width:380px;border:2px solid #000;background:#f5f5f5;font-size:11px;z-index:10}
+.plan-title table{width:100%;border-collapse:collapse}
+.plan-title td{border:1px solid #000;padding:5px}
+.plan-title .hdr{background:#1a2980;color:#ffd700;text-align:center;font-weight:bold;font-size:13px}
+#planMap{height:500px;border:2px solid #000;background:#fff;width:100%}
+
+/* ===== CHECKBOX GROUP ===== */
+.chk-group{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
+.chk-group label{display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;color:#bdc3c7}
+
+/* ===== FOOTER ===== */
+.footer{background:#000;color:#ffd700;text-align:center;padding:8px;font-size:12px;border-top:2px solid #ffd700}
+
+/* ===== LOG ===== */
+.log-box{background:#000;color:#0f0;padding:10px;border-radius:5px;font-family:monospace;font-size:11px;max-height:400px;overflow-y:auto;white-space:pre-wrap;border:1px solid #27ae60}
+
+/* ===== FORMAT INFO BOX ===== */
+.fmt-box{background:#1e2a38;border:1px solid #ffd700;border-radius:6px;padding:10px;margin:10px 0;font-size:12px}
+.fmt-box h4{color:#ffd700;margin-bottom:5px;font-size:13px}
+.fmt-box code{background:#000;color:#2ecc71;padding:2px 6px;border-radius:3px;font-size:11px}
+
+@media print {
+  body * { visibility: hidden; }
+  .prof-plan, .prof-plan * { visibility: visible; }
+  .prof-plan { position: absolute; left: 0; top: 0; width: 100%; border: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<div class="topbar">
+  <h1>🌍 SubTopo-Geodetic-Coordinate Convers</h1>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span style="color:#ffd700;font-size:12px">⭐ PREMIUM ✦ NASRAOUI FATHI ✦ Version 5.0 • Geodetic Converter</span>
+    <button class="lock" onclick="alert('Connexion: admin/admin')">🔓 SE CONNECTER</button>
+  </div>
+</div>
+
+<!-- ===== MENU BAR (File Edit Parameter Calculation Database Help) ===== -->
+<div class="menubar">
+  <div class="menu-item">
+    <button class="menu-btn" onclick="toggleMenu(event,'mFile')">📄 File</button>
+    <div class="dropdown" id="mFile">
+      <a onclick="showModal('mNouveau');closeMenus()">📄 Nouveau</a>
+      <a onclick="alert('Ouvrir projet');closeMenus()">📂 Ouvrir</a>
+      <a onclick="saveProject();closeMenus()">💾 Sauvegarder</a>
+      <div class="sep"></div>
+      <a onclick="exportPDF();closeMenus()">📑 PDF</a>
+      <a onclick="exportCSV();closeMenus()">📊 CSV</a>
+      <a onclick="exportDXF();closeMenus()">📐 DXF</a>
+      <div class="sep"></div>
+      <a onclick="if(confirm('Quitter?'))window.close();closeMenus()">🚪 Quitter</a>
+    </div>
+  </div>
+  <div class="menu-item">
+    <button class="menu-btn" onclick="toggleMenu(event,'mEdit')">✏️ Edit</button>
+    <div class="dropdown" id="mEdit">
+      <a onclick="clrFields();closeMenus()">🗑️ Effacer</a>
+      <a onclick="resetAll();closeMenus()">🔁 Reset</a>
+      <div class="sep"></div>
+      <a onclick="setDefTunisie();closeMenus()">🇹🇳 Défaut Tunisie</a>
+      <a onclick="setDefED50();closeMenus()">🇪🇺 Exemple ED50→WGS84</a>
+    </div>
+  </div>
+  <div class="menu-item">
+    <button class="menu-btn" onclick="toggleMenu(event,'mParam')">⚙️ Parameter</button>
+    <div class="dropdown" id="mParam">
+      <a onclick="showModal('mDatums');closeMenus()">🗺️ Datums</a>
+      <a onclick="showModal('m7param');closeMenus()">⚙️ 7-Paramètres</a>
+      <a onclick="showModal('mEPSG');closeMenus()">🔢 EPSG</a>
+    </div>
+  </div>
+  <div class="menu-item">
+    <button class="menu-btn" onclick="toggleMenu(event,'mCalc')">🎯 Calculation</button>
+    <div class="dropdown" id="mCalc">
+      <a onclick="calcTrans();closeMenus()">➡️ Transformer</a>
+      <a onclick="calcInverse();closeMenus()">🔄 Inverse</a>
+      <a onclick="showModal('m7param');closeMenus()">🎯 ⭐ Calculer 7-Paramètres</a>
+    </div>
+  </div>
+  <div class="menu-item">
+    <button class="menu-btn" onclick="toggleMenu(event,'mDB')">💾 Database ⭐</button>
+    <div class="dropdown" id="mDB">
+      <a onclick="showModal('mDBModal');closeMenus()">💾 Vue d'ensemble</a>
+      <a onclick="expDB();closeMenus()">📤 Exporter DB</a>
+      <a onclick="document.getElementById('impDB').click();closeMenus()">📥 Importer DB</a>
+      <a onclick="fillDB();closeMenus()">🌱 Remplir avec points</a>
+    </div>
+  </div>
+  <div class="menu-item">
+    <button class="menu-btn" onclick="toggleMenu(event,'mHelp')">ℹ️ Help</button>
+    <div class="dropdown" id="mHelp">
+      <a onclick="showModal('mAbout');closeMenus()">ℹ️ À propos</a>
+      <a onclick="showModal('mAide');closeMenus()">❓ Aide</a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TOOLBAR ===== -->
+<div class="toolbar">
+  <button class="tbtn" onclick="showModal('mNouveau')">📄 Nouveau</button>
+  <button class="tbtn" onclick="showModal('mImport')">📂 Import Fichier</button>
+  <button class="tbtn" onclick="showModal('mPlan')">📐 Plan Pro</button>
+  <button class="tbtn star" onclick="showModal('m7param')">🎯 ⭐ Calcul 7-Param</button>
+  <button class="tbtn" onclick="showModal('mDBModal')">💾 Database ⭐</button>
+  <button class="tbtn" onclick="showModal('mEPSG')">🔢 EPSG</button>
+  <button class="tbtn" onclick="showModal('mPresets')">⚙️ Presets</button>
+  <button class="tbtn" onclick="showModal('mLog')">📋 Logfile</button>
+  <button class="tbtn" onclick="swapSys()">🔄 Swap</button>
+  <button class="tbtn danger" onclick="resetAll()">🔁 RESET</button>
+  <button class="tbtn" onclick="exportPDF()">📑 PDF</button>
+  <button class="tbtn" onclick="exportCSV()">📊 CSV</button>
+  <button class="tbtn" onclick="exportDXF()">📐 DXF</button>
+</div>
+
+<!-- ===== MAIN AREA ===== -->
+<div class="main">
+  <!-- SOURCE -->
+  <div class="panel">
+    <h3>➡️ Système Source</h3>
+    <div class="fg"><label>🔄 EPSG-Code:</label>
+      <select id="srcEPSG" onchange="loadEPSG('src')"><option value="">Sélectionner...</option></select>
+    </div>
+    <div class="fg"><label>Système:</label><input id="srcSys" readonly></div>
+    <div class="fg"><label>Datum:</label><input id="srcDt" readonly></div>
+    <h3 style="margin-top:10px">📍 Coordonnées Source (X, Y, Z)</h3>
+    <div class="fg"><label>Point-Name:</label><input id="srcName" placeholder="Nom du point"></div>
+    <div class="coordgrid">
+      <div class="fg"><label>X [m]:</label><input type="number" id="srcX" step="0.001"></div>
+      <div class="fg"><label>Y [m]:</label><input type="number" id="srcY" step="0.001"></div>
+      <div class="fg"><label>Z [m]:</label><input type="number" id="srcZ" step="0.001"></div>
+    </div>
+    <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="calcTrans()">▶ Calculer</button>
+    <button class="btn btn-s" style="width:100%" onclick="savePoint()">💾 ⭐ Sauvegarder DB</button>
+  </div>
+
+  <!-- CENTER - TRANSFORM -->
+  <div class="center-col">
+    <h3>⚙️ TRANSFORM ➡️</h3>
+    <div style="font-size:11px;color:#ffd700;text-align:center;margin-bottom:8px">7-Paramètres 3D-Datum-Shift:</div>
+    <div class="paramgrid">
+      <div class="fg"><label>X0 [m]:</label><input type="number" id="tX0" step="0.001" value="0"></div>
+      <div class="fg"><label>Y0 [m]:</label><input type="number" id="tY0" step="0.001" value="0"></div>
+      <div class="fg"><label>Z0 [m]:</label><input type="number" id="tZ0" step="0.001" value="0"></div>
+      <div class="fg"><label>ex ["]:</label><input type="number" id="tex" step="0.000001" value="0"></div>
+      <div class="fg"><label>ey ["]:</label><input type="number" id="tey" step="0.000001" value="0"></div>
+      <div class="fg"><label>ez ["]:</label><input type="number" id="tez" step="0.000001" value="0"></div>
+      <div class="fg" style="grid-column:span 2"><label>m [ppm]:</label><input type="number" id="tm" step="0.001" value="0"></div>
+    </div>
+    <div class="fg" style="margin-top:8px"><label>🌍 Geoidmodel:</label>
+      <select><option>EGM2008</option><option>EGM96</option><option>None</option></select>
+    </div>
+    <button class="btn btn-g" style="width:100%" onclick="showModal('m7param')">🎯 ⭐ Calculer 7-Param</button>
+    <button class="btn btn-s" style="width:100%" onclick="saveParams()">💾 Sauvegarder</button>
+  </div>
+
+  <!-- TARGET -->
+  <div class="panel">
+    <h3>🌐 Système Cible</h3>
+    <div class="fg"><label>⬅️ EPSG-Code:</label>
+      <select id="tgtEPSG" onchange="loadEPSG('tgt')"><option value="">Sélectionner...</option></select>
+    </div>
+    <div class="fg"><label>Système:</label><input id="tgtSys" readonly></div>
+    <div class="fg"><label>Datum:</label><input id="tgtDt" readonly></div>
+    <div class="result-box" id="resBox" style="display:none">
+      <h4>📐 Résultats (X, Y, Z)</h4>
+      <div class="fg"><label>Point-Name:</label><input id="tgtName" readonly></div>
+      <div class="coordgrid">
+        <div class="fg"><label>X [m]:</label><input id="tgtX" readonly></div>
+        <div class="fg"><label>Y [m]:</label><input id="tgtY" readonly></div>
+        <div class="fg"><label>Z [m]:</label><input id="tgtZ" readonly></div>
+      </div>
+      <div style="margin-top:6px;font-size:11px;background:#1e2a38;padding:5px;border-radius:4px">
+        <div class="info-row"><span>ΔX [m]:</span><span id="dX">0</span></div>
+        <div class="info-row"><span>ΔY [m]:</span><span id="dY">0</span></div>
+        <div class="info-row"><span>ΔZ [m]:</span><span id="dZ">0</span></div>
+        <div class="info-row"><span>Lon:</span><span id="dLon">-</span></div>
+        <div class="info-row"><span>Lat:</span><span id="dLat">-</span></div>
+      </div>
+    </div>
+    <button class="btn btn-s" style="width:100%;margin-top:8px" onclick="saveResult()">💾 ⭐ Sauvegarder</button>
+  </div>
+</div>
+
+<!-- ===== STATUS BAR ===== -->
+<div class="statusbar">
+  <div>🌍 Earth | 🗺️ Maps | <span id="statusMsg">Prêt</span></div>
+  <div>📝 Nouveau DB: <span class="db-status">Connectée ✅</span> | Points: <span id="stPtsCount">0</span></div>
+</div>
+
+<!-- ============ MODAL NOUVEAU ============ -->
+<div id="mNouveau" class="modal"><div class="modal-c" style="max-width:500px">
+  <button class="modal-x" onclick="closeModal('mNouveau')">×</button>
+  <h2>📄 Nouveau Projet</h2>
+  <div class="fg"><label>Nom du projet:</label><input id="newProjName"></div>
+  <div class="fg"><label>Client:</label><input id="newProjClient"></div>
+  <div class="fg"><label>Description:</label><input id="newProjDesc"></div>
+  <button class="btn btn-s" onclick="createProject()">✅ Créer</button>
+  <button class="btn btn-d" onclick="closeModal('mNouveau')">Annuler</button>
+</div></div>
+
+<!-- ============ MODAL IMPORT (CSV/TXT/DXF/DWG) ============ -->
+<div id="mImport" class="modal"><div class="modal-c" style="max-width:1000px">
+  <button class="modal-x" onclick="closeModal('mImport')">×</button>
+  <h2>📂 Importer un fichier de points — CSV / TXT / DXF / DWG</h2>
+  
+  <div class="fmt-box">
+    <h4>📋 Formats acceptés</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px">
+      <div><b>📊 CSV (.csv)</b><br><code>Nom;X;Y;Z;EPSG</code><br><code>Tunis;611324.5;4078642.3;50;32632</code></div>
+      <div><b>📄 TXT (.txt)</b><br><code>Nom X Y Z EPSG</code><br><code>Tunis 611324.5 4078642.3 50 32632</code></div>
+      <div><b>🏗️ DXF (.dxf)</b><br>Points POINT AutoCAD<br>Entités INSERT avec attributs<br>CSV avec pays/zone</div>
+    </div>
+    <div style="margin-top:8px;font-size:11px">
+      <b>Nom;Zone;Pays;EPSG;X;Y;Z</b><br>
+      Séparateurs CSV/TXT: <code>Virgule ,</code> <code>Point-virgule ;</code> <code>Tab</code> <code>Espace</code><br>
+      DXF — Entités lues: POINT, TEXT, MTEXT, INSERT — Couche (LAYER) = Zone/Pays
+    </div>
+  </div>
+
+  <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileIn').click()">
+    <h3>📂 Cliquer ou glisser-déposer un fichier</h3>
+    <p style="font-size:12px;color:#bdc3c7">CSV, TXT, DXF, DWG acceptés</p>
+    <input type="file" id="fileIn" style="display:none" accept=".csv,.txt,.dxf,.dwg" onchange="handleFile(event)">
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <div class="fg"><label>Séparateur</label>
+      <select id="sep"><option value="auto">🔍 Auto-détection</option><option value=";">Point-virgule ;</option><option value=",">Virgule ,</option><option value="\t">Tabulation</option><option value=" ">Espace</option></select>
+    </div>
+    <div class="fg"><label>EPSG par défaut (si absent)</label>
+      <select id="defEPSG">
+        <option value="32632">32632 — WGS84/UTM 32N (Tunisie)</option>
+        <option value="32633">32633 — WGS84/UTM 33N (Libye Est)</option>
+        <option value="32634">32634 — WGS84/UTM 34N</option>
+        <option value="4326">4326 — WGS84 Géographique</option>
+        <option value="22332">22332 — Carthage/UTM 32N</option>
+      </select>
+    </div>
+    <div class="fg" style="display:flex;align-items:end">
+      <label style="display:flex;align-items:center;gap:5px;cursor:pointer">
+        <input type="checkbox" id="hasHeader"> La première ligne est un en-tête (ignorer)
+      </label>
+    </div>
+  </div>
+
+  <!-- Aperçu CSV/TXT -->
+  <div id="prevCSV" style="display:none;margin-top:10px">
+    <h3 style="color:#ffd700">👁️ Aperçu ( <span id="cntPts">0</span> points détectés)</h3>
+    <div style="max-height:250px;overflow-y:auto">
+      <table class="tbl" id="tblPrev"><thead><tr><th>#</th><th>Nom</th><th>EPSG</th><th>X (m)</th><th>Y (m)</th><th>Z (m)</th><th>Statut</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- Éditeur DXF -->
+  <div id="editDXF" style="display:none;margin-top:10px">
+    <h3 style="color:#ffd700">🏗️ Éditeur DXF — Modifier avant import</h3>
+    <div class="chk-group">
+      <label><input type="checkbox" id="dxfTrans" onchange="document.getElementById('dxfTransOpt').style.display=this.checked?'block':'none'"> Appliquer transformation de coordonnées</label>
+    </div>
+    <div id="dxfTransOpt" style="display:none;background:#1e2a38;padding:10px;border-radius:6px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="fg"><label>Système source DXF:</label><select id="dxfSrc"></select></div>
+        <div class="fg"><label>Système cible:</label><select id="dxfTgt"></select></div>
+      </div>
+    </div>
+    <div style="max-height:300px;overflow-y:auto">
+      <table class="tbl" id="tblDXF"><thead><tr><th>Type</th><th>Layer</th><th>X</th><th>Y</th><th>Z</th><th>Nom</th><th>Actions</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div style="margin-top:15px;text-align:right">
+    <button class="btn btn-s" onclick="doImport()">✅ Importer les points</button>
+    <button class="btn btn-d" onclick="closeModal('mImport')">Annuler</button>
+  </div>
+</div></div>
+
+<!-- ============ MODAL MAP ============ -->
+<div id="mMap" class="modal"><div class="modal-c" style="max-width:900px">
+  <button class="modal-x" onclick="closeModal('mMap')">×</button>
+  <h2>🗺️ Carte des points</h2>
+  <div style="background:#e74c3c;color:#fff;padding:8px;border-radius:5px;margin-bottom:10px;font-size:12px">⚠️ Connexion internet requise pour les tuiles de carte<br>● Vert = point de référence &nbsp; ● Bleu = point utilisateur</div>
+  <div id="mapView" style="height:500px;border:2px solid #ffd700;border-radius:5px"></div>
+</div></div>
+
+<!-- ============ MODAL FICHE SIGNALÉTIQUE ============ -->
+<div id="mFiche" class="modal"><div class="modal-c" style="max-width:600px">
+  <button class="modal-x" onclick="closeModal('mFiche')">×</button>
+  <h2>📋 Fiche Signalétique — Point Géodésique</h2>
+  <div id="ficheContent"></div>
+  <button class="btn btn-p" onclick="exportFichePDF()">📑 Exporter PDF</button>
+  <button class="btn btn-d" onclick="closeModal('mFiche')">Fermer</button>
+</div></div>
+
+<!-- ============ MODAL PLAN PRO ============ -->
+<div id="mPlan" class="modal"><div class="modal-c" style="max-width:1400px">
+  <button class="modal-x" onclick="closeModal('mPlan')">×</button>
+  <h2>📐 Plan Topographique Professionnel</h2>
+  
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <div class="fg" style="min-width:150px"><label>🌍 Pays:</label>
+      <select id="plCountry" onchange="updPlanZones()"><option value="">Tous les pays</option></select>
+    </div>
+    <div class="fg" style="min-width:150px"><label>📍 Zone:</label>
+      <select id="plZone" onchange="genPlan()"><option value="">Toutes les zones</option></select>
+    </div>
+    <div class="chk-group">
+      <label><input type="checkbox" id="shNames" checked> Noms</label>
+      <label><input type="checkbox" id="shCoords" checked> Coordonnées</label>
+      <label><input type="checkbox" id="shGrid" checked> Quadrillage</label>
+      <label><input type="checkbox" id="shCross"> Croix visée</label>
+    </div>
+    <div class="fg"><label>Format:</label>
+      <select id="plFmt"><option value="A4P">A4 Portrait</option><option value="A4L">A4 Paysage</option><option value="A3L" selected>A3 Paysage</option></select>
+    </div>
+    <button class="btn btn-p" onclick="genPlan()">🔄 Actualiser</button>
+    <button class="btn btn-s" onclick="exportPlanPDF()">🖨️ Exporter PDF</button>
+    <button class="btn btn-i" onclick="exportPlanDXF()">📐 Export DXF</button>
+  </div>
+
+  <div class="prof-plan" id="profPlan">
+    <div id="planMap"></div>
+    <div class="plan-title">
+      <table>
+        <tr><td colspan="4" class="hdr" style="font-size:14px">PLAN TOPOGRAPHIQUE</td></tr>
+        <tr><td colspan="2"><b>Projet:</b></td><td colspan="2"><input id="plProj" style="width:100%;border:none;background:transparent" placeholder="Nom du projet"></td></tr>
+        <tr><td><b>Client:</b></td><td><input id="plCli" style="width:100%;border:none;background:transparent"></td><td><b>Date:</b></td><td><input type="date" id="plDate" style="width:100%;border:none;background:transparent"></td></tr>
+        <tr><td><b>Zone:</b></td><td><span id="plZoneInf">-</span></td><td><b>Système:</b></td><td><span id="plSysInf">-</span></td></tr>
+        <tr><td><b>Échelle:</b></td><td><span id="plScInf">1:----</span></td><td><b>Feuille:</b></td><td>1/1</td></tr>
+        <tr><td><b>Nb Points:</b></td><td><span id="plNbPts">0</span></td><td><b>North:</b></td><td>↑ N</td></tr>
+        <tr><td colspan="2"><b>Dessiné par:</b></td><td colspan="2">NASRAOUI FATHI</td></tr>
+        <tr><td colspan="2"><b>Vérifié par:</b></td><td colspan="2"><input style="width:100%;border:none;background:transparent"></td></tr>
+        <tr><td colspan="4" style="text-align:center;background:#1a2980;color:#ffd700;padding:6px"><b>SubTopo Engineering</b><br>© 2025 - Tous droits réservés</td></tr>
+      </table>
+    </div>
+    <div style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);color:#ffd700;padding:8px;border-radius:5px;font-size:12px" id="plEmptyMsg">Aucun point</div>
+  </div>
+  <div style="text-align:center;margin-top:10px;color:#bdc3c7;font-size:11px">SubTopo Engineering — NASRAOUI FATHI © 2025</div>
+</div></div>
+
+<!-- ============ MODAL 7-PARAM ============ -->
+<div id="m7param" class="modal"><div class="modal-c" style="max-width:1100px">
+  <button class="modal-x" onclick="closeModal('m7param')">×</button>
+  <h2>🎯 ⭐ Calcul 7-Paramètres</h2>
+  <p style="color:#e74c3c;font-size:12px">ℹ️ Minimum 3 points requis</p>
+  <h3 style="color:#ffd700;margin:10px 0;font-size:14px">Points Communs</h3>
+  <div style="max-height:300px;overflow-y:auto">
+    <table class="tbl" id="tbl7p">
+      <thead>
+        <tr><th rowspan="2">#</th><th rowspan="2">Nom</th><th colspan="3">SOURCE</th><th colspan="3">CIBLE</th><th rowspan="2"></th></tr>
+        <tr><th>X1</th><th>Y1</th><th>Z1</th><th>X2</th><th>Y2</th><th>Z2</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div style="margin:10px 0">
+    <button class="btn btn-p" onclick="add7p()">➕ Ajouter</button>
+    <button class="btn btn-i" onclick="loadEx7p()">📋 Exemple</button>
+    <button class="btn btn-d" onclick="clr7p()">🗑️ Vider</button>
+    <button class="btn btn-s" onclick="calc7p()">🎯 CALCULER</button>
+  </div>
+  <div id="res7p" style="display:none">
+    <h3 style="color:#ffd700">✅ Résultats</h3>
+    <table class="tbl" id="tblRes7p"></table>
+    <h3 style="color:#ffd700;margin-top:10px">📊 Résidus</h3>
+    <table class="tbl" id="tblResid"></table>
+    <div style="margin-top:10px">
+      <button class="btn btn-s" onclick="apply7p()">✅ Appliquer</button>
+      <button class="btn btn-p" onclick="save7p()">💾 Sauvegarder</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- ============ MODAL DATABASE ============ -->
+<div id="mDBModal" class="modal"><div class="modal-c" style="max-width:1200px">
+  <button class="modal-x" onclick="closeModal('mDBModal')">×</button>
+  <h2>💾 ⭐ Base de Données</h2>
+  
+  <div class="stats">
+    <div class="stat-box"><div class="num" id="stProj">0</div><div class="lbl">Projets</div></div>
+    <div class="stat-box"><div class="num" id="stPts">0</div><div class="lbl">Points</div></div>
+    <div class="stat-box"><div class="num" id="stTrans">0</div><div class="lbl">Transformations</div></div>
+    <div class="stat-box"><div class="num" id="stPar">0</div><div class="lbl">Paramètres</div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="dbTab('proj',this)">📂 Projets</button>
+    <button class="tab" onclick="dbTab('points',this)">📍 Points</button>
+    <button class="tab" onclick="dbTab('trans',this)">🔄 Transform.</button>
+    <button class="tab" onclick="dbTab('params',this)">⚙️ Params</button>
+    <button class="tab" onclick="showMapView()">🗺️ Carte</button>
+  </div>
+
+  <!-- Filtres -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+    <div class="fg"><label>🌍 Pays:</label>
+      <select id="dbCountry" onchange="updDBZones();filterDB()"><option value="">Tous les pays</option></select>
+    </div>
+    <div class="fg"><label>📍 Zone:</label>
+      <select id="dbZone" onchange="filterDB()"><option value="">Toutes les zones</option></select>
+    </div>
+    <div class="fg"><label>🔍 Recherche:</label>
+      <input id="dbSearch" placeholder="Nom du point..." oninput="filterDB()">
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div id="dbContent" style="max-height:350px;overflow-y:auto">
+    <table class="tbl" id="tblDB">
+      <thead><tr><th>#</th><th>Nom</th><th>Date</th><th>Actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:10px">
+    <button class="btn btn-i" onclick="fillDB()">🌱 Remplir avec points</button>
+    <button class="btn btn-p" onclick="showModal('mImport');closeModal('mDBModal')">📂 Importer fichier</button>
+    <button class="btn btn-s" onclick="expDB()">📤 Exporter</button>
+    <button class="btn btn-d" onclick="clrDB()">🗑️ Effacer</button>
+  </div>
+</div></div>
+
+<!-- ============ MODAL PRESETS ============ -->
+<div id="mPresets" class="modal"><div class="modal-c" style="max-width:800px">
+  <button class="modal-x" onclick="closeModal('mPresets')">×</button>
+  <h2>⚙️ Presets</h2>
+  <table class="tbl" id="tblPre"><thead><tr><th>Preset</th><th>ΔX</th><th>ΔY</th><th>ΔZ</th><th>Action</th></tr></thead><tbody></tbody></table>
+</div></div>
+
+<!-- ============ MODAL EPSG ============ -->
+<div id="mEPSG" class="modal"><div class="modal-c" style="max-width:1000px">
+  <button class="modal-x" onclick="closeModal('mEPSG')">×</button>
+  <h2>🔢 EPSG</h2>
+  <div class="fg"><input id="epsgSch" placeholder="🔍 Rechercher..." oninput="schEPSG()"></div>
+  <div style="max-height:500px;overflow-y:auto">
+    <table class="tbl" id="tblEPSG"><thead><tr><th>EPSG</th><th>Description</th><th>Pays/Région</th><th>Action</th></tr></thead><tbody></tbody></table>
+  </div>
+</div></div>
+
+<!-- ============ MODAL LOG ============ -->
+<div id="mLog" class="modal"><div class="modal-c" style="max-width:700px">
+  <button class="modal-x" onclick="closeModal('mLog')">×</button>
+  <h2>📋 Logfile</h2>
+  <div class="log-box" id="logBox">[Aucune entrée]</div>
+</div></div>
+
+<!-- ============ MODAL DATUMS ============ -->
+<div id="mDatums" class="modal"><div class="modal-c" style="max-width:800px">
+  <button class="modal-x" onclick="closeModal('mDatums')">×</button>
+  <h2>🗺️ Datums</h2>
+  <table class="tbl" id="tblDatums"><thead><tr><th>Datum</th><th>Ellipsoïde</th><th>Région</th></tr></thead><tbody></tbody></table>
+</div></div>
+
+<!-- ============ MODAL ABOUT ============ -->
+<div id="mAbout" class="modal"><div class="modal-c" style="max-width:500px;text-align:center">
+  <button class="modal-x" onclick="closeModal('mAbout')">×</button>
+  <h2>SubTopo-Geodetic-Coordinate Convers</h2>
+  <div style="font-size:16px;margin:20px 0">⭐ Version PREMIUM v5.0</div>
+  <div>© 2025 SubTopo Engineering</div>
+  <div style="margin-top:10px">✦ DEVELOPED BY ✦<br><b style="color:#ffd700;font-size:16px">NASRAOUI FATHI</b></div>
+  <button class="btn btn-g" style="margin-top:20px" onclick="closeModal('mAbout')">OK</button>
+</div></div>
+
+<!-- ============ MODAL AIDE ============ -->
+<div id="mAide" class="modal"><div class="modal-c" style="max-width:600px">
+  <button class="modal-x" onclick="closeModal('mAide')">×</button>
+  <h2>❓ Aide</h2>
+  <h3 style="color:#ffd700">🎯 Utilisation</h3>
+  <ol style="margin:15px 0;padding-left:25px;line-height:1.8">
+    <li>Choisir EPSG Source + X,Y,Z</li>
+    <li>Choisir EPSG Cible</li>
+    <li>TRANSFORM</li>
+  </ol>
+  <button class="btn btn-d" onclick="closeModal('mAide')">Fermer</button>
+</div></div>
+
+<!-- Hidden file input for DB import -->
+<input type="file" id="impDB" style="display:none" accept=".json" onchange="impDBF(event)">
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  SubTopo-Geodetic-Coordinate Convers<br>
+  Topographic Solutions © 2025 ✦ DEVELOPED BY ✦ NASRAOUI FATHI<br>
+  Version <b>v5.0 ⭐ PREMIUM</b> 🌍 FR/EN/AR • 🎯 Calcul 7-Param • 💾 Database • 🇹🇳 Tunisie
+</div>
+
+<script>
+/* ============================================================
+   BASE DE DONNÉES EPSG COMPLÈTE - TOUS LES SYSTÈMES DU MONDE
+   IGN Clarke 1880 inclus
+   ============================================================ */
+const EPSG_DB = [
+  // WGS84 Géographique
+  {c:'4326',n:'WGS 84',d:'WGS84',r:'Monde',p:'International',t:'geographic'},
+  {c:'4979',n:'WGS 84 (3D)',d:'WGS84',r:'Monde',p:'International',t:'geographic3D'},
+  
+  // WGS84 UTM Zones Nord (60 zones)
+  ...Array.from({length:60},(_,i)=>({c:String(32601+i),n:`WGS 84 / UTM zone ${i+1}N`,d:'WGS84',r:`Zone ${i+1}N`,p:'International',t:'projected'})),
+  // WGS84 UTM Zones Sud
+  ...Array.from({length:60},(_,i)=>({c:String(32701+i),n:`WGS 84 / UTM zone ${i+1}S`,d:'WGS84',r:`Zone ${i+1}S`,p:'International',t:'projected'})),
+  
+  // ===== IGN CLARKE 1880 (RÉINTÉGRÉ) =====
+  {c:'7011',n:'Clarke 1880 (IGN) Ellipsoid',d:'Clarke1880IGN',r:'France',p:'France',t:'ellipsoid',a:6378249.2,rf:293.4660212936269},
+  {c:'4011',n:'Clarke 1880 (IGN)',d:'Clarke1880IGN',r:'France/Anciennes colonies',p:'France',t:'geographic'},
+  {c:'4807',n:'NTF (Paris)',d:'NTF',r:'France',p:'France',t:'geographic'},
+  {c:'27571',n:'NTF (Paris) / Lambert Nord France',d:'NTF',r:'France Nord',p:'France',t:'projected'},
+  {c:'27572',n:'NTF (Paris) / Lambert Centre France',d:'NTF',r:'France Centre',p:'France',t:'projected'},
+  {c:'27573',n:'NTF (Paris) / Lambert Sud France',d:'NTF',r:'France Sud',p:'France',t:'projected'},
+  {c:'27574',n:'NTF (Paris) / Lambert Corse',d:'NTF',r:'Corse',p:'France',t:'projected'},
+  {c:'27581',n:'NTF / Lambert Nord étendu',d:'NTF',r:'France Nord',p:'France',t:'projected'},
+  {c:'27582',n:'NTF / Lambert Centre étendu',d:'NTF',r:'France Centre',p:'France',t:'projected'},
+  {c:'27583',n:'NTF / Lambert Sud étendu',d:'NTF',r:'France Sud',p:'France',t:'projected'},
+  {c:'27584',n:'NTF / Lambert Corse étendu',d:'NTF',r:'Corse',p:'France',t:'projected'},
+  {c:'27561',n:'NTF / France I',d:'NTF',r:'France Nord',p:'France',t:'projected'},
+  {c:'27562',n:'NTF / France II',d:'NTF',r:'France Centre',p:'France',t:'projected'},
+  {c:'27563',n:'NTF / France III',d:'NTF',r:'France Sud',p:'France',t:'projected'},
+  {c:'27564',n:'NTF / France IV (Corse)',d:'NTF',r:'Corse',p:'France',t:'projected'},
+  
+  // CARTHAGE (TUNISIE) - Clarke 1880 IGN
+  {c:'4231',n:'Carthage',d:'Carthage',r:'Tunisie',p:'Tunisie',t:'geographic'},
+  {c:'22332',n:'Carthage / UTM zone 32N',d:'Carthage',r:'Tunisie',p:'Tunisie',t:'projected'},
+  {c:'22391',n:'Carthage / Nord Tunisie',d:'Carthage',r:'Tunisie Nord',p:'Tunisie',t:'projected'},
+  {c:'22392',n:'Carthage / Sud Tunisie',d:'Carthage',r:'Tunisie Sud',p:'Tunisie',t:'projected'},
+  
+  // NORD SAHARA (ALGÉRIE)
+  {c:'4233',n:'Nord Sahara 1959',d:'NordSahara1959',r:'Algérie',p:'Algérie',t:'geographic'},
+  {c:'22232',n:'Nord Sahara 1959 / UTM 32N',d:'NordSahara1959',r:'Algérie',p:'Algérie',t:'projected'},
+  {c:'22233',n:'Nord Sahara 1959 / UTM 33N',d:'NordSahara1959',r:'Algérie Est',p:'Algérie',t:'projected'},
+  
+  // ED50 (EUROPE)
+  {c:'4230',n:'ED50',d:'ED50',r:'Europe',p:'Europe',t:'geographic'},
+  ...Array.from({length:9},(_,i)=>({c:String(23028+i),n:`ED50 / UTM zone ${28+i}N`,d:'ED50',r:`Europe Zone ${28+i}N`,p:'Europe',t:'projected'})),
+  
+  // ETRS89 (EUROPE MODERNE)
+  {c:'4258',n:'ETRS89',d:'ETRS89',r:'Europe',p:'Europe',t:'geographic'},
+  ...Array.from({length:8},(_,i)=>({c:String(25829+i),n:`ETRS89 / UTM zone ${29+i}N`,d:'ETRS89',r:`Europe Zone ${29+i}N`,p:'Europe',t:'projected'})),
+  
+  // NAD83 (AMÉRIQUE NORD)
+  {c:'4269',n:'NAD83',d:'NAD83',r:'Amérique Nord',p:'USA',t:'geographic'},
+  {c:'4617',n:'NAD83 (SCRS)',d:'NAD83',r:'Canada',p:'Canada',t:'geographic'},
+  ...Array.from({length:21},(_,i)=>({c:String(26903+i),n:`NAD83 / UTM zone ${3+i}N`,d:'NAD83',r:`USA/Canada Zone ${3+i}N`,p:'USA/Canada',t:'projected'})),
+  
+  // NAD27
+  {c:'4267',n:'NAD27',d:'NAD27',r:'Amérique Nord',p:'USA',t:'geographic'},
+  ...Array.from({length:21},(_,i)=>({c:String(26703+i),n:`NAD27 / UTM zone ${3+i}N`,d:'NAD27',r:`USA Zone ${3+i}N`,p:'USA',t:'projected'})),
+  
+  // SIRGAS (AMÉRIQUE SUD)
+  {c:'4618',n:'SIRGAS 2000',d:'SIRGAS2000',r:'Amérique Sud',p:'Brésil',t:'geographic'},
+  {c:'31965',n:'SIRGAS 2000 / UTM 11S',d:'SIRGAS2000',r:'Brésil',p:'Brésil',t:'projected'},
+  ...Array.from({length:7},(_,i)=>({c:String(31977+i),n:`SIRGAS 2000 / UTM ${17+i}S`,d:'SIRGAS2000',r:'Brésil',p:'Brésil',t:'projected'})),
+  
+  // SAD69
+  {c:'4618',n:'SAD69',d:'SAD69',r:'Brésil',p:'Brésil',t:'geographic'},
+  ...Array.from({length:5},(_,i)=>({c:String(29181+i),n:`SAD69 / UTM ${21+i}S`,d:'SAD69',r:'Brésil',p:'Brésil',t:'projected'})),
+  
+  // GDA94 / GDA2020 (AUSTRALIE)
+  {c:'4283',n:'GDA94',d:'GDA94',r:'Australie',p:'Australie',t:'geographic'},
+  {c:'7844',n:'GDA2020',d:'GDA2020',r:'Australie',p:'Australie',t:'geographic'},
+  ...Array.from({length:10},(_,i)=>({c:String(28349+i),n:`GDA94 / MGA zone ${49+i}`,d:'GDA94',r:'Australie',p:'Australie',t:'projected'})),
+  
+  // NZGD (NOUVELLE-ZÉLANDE)
+  {c:'4167',n:'NZGD2000',d:'NZGD2000',r:'Nouvelle-Zélande',p:'Nouvelle-Zélande',t:'geographic'},
+  {c:'2193',n:'NZGD2000 / NZTM',d:'NZGD2000',r:'Nouvelle-Zélande',p:'Nouvelle-Zélande',t:'projected'},
+  
+  // JGD (JAPON)
+  {c:'4612',n:'JGD2011',d:'JGD2011',r:'Japon',p:'Japon',t:'geographic'},
+  {c:'4611',n:'JGD2000',d:'JGD2000',r:'Japon',p:'Japon',t:'geographic'},
+  
+  // KOREA
+  {c:'4166',n:'KGD2002',d:'KGD2002',r:'Corée Sud',p:'Corée du Sud',t:'geographic'},
+  
+  // CHINE
+  {c:'4490',n:'CGCS2000',d:'CGCS2000',r:'Chine',p:'Chine',t:'geographic'},
+  {c:'4610',n:'Xian 1980',d:'Xian1980',r:'Chine',p:'Chine',t:'geographic'},
+  {c:'4214',n:'Beijing 1954',d:'Beijing1954',r:'Chine',p:'Chine',t:'geographic'},
+  
+  // INDE
+  {c:'4145',n:'Everest 1830 (1975)',d:'Everest1830',r:'Inde',p:'Inde',t:'geographic'},
+  {c:'4015',n:'Everest 1830 (1962)',d:'Everest1830',r:'Inde/Pakistan',p:'Inde',t:'geographic'},
+  {c:'4733',n:'Kalianpur 1975',d:'Kalianpur1975',r:'Inde',p:'Inde',t:'geographic'},
+  
+  // MOYEN-ORIENT
+  {c:'4204',n:'Ain el Abd 1970',d:'AinElAbd1970',r:'Arabie Saoudite',p:'Arabie Saoudite',t:'geographic'},
+  {c:'4165',n:'IGRS',d:'IGRS',r:'Irak',p:'Irak',t:'geographic'},
+  {c:'4150',n:'Israel 1993',d:'Israel1993',r:'Israël',p:'Israël',t:'geographic'},
+  {c:'2039',n:'Israel 1993 / ITG',d:'Israel1993',r:'Israël',p:'Israël',t:'projected'},
+  
+  // AFRIQUE
+  {c:'4220',n:'Arc 1950',d:'Arc1950',r:'Afrique Australe',p:'Afrique du Sud',t:'geographic'},
+  {c:'4209',n:'Arc 1960',d:'Arc1960',r:'Afrique Est',p:'Kenya',t:'geographic'},
+  {c:'4263',n:'Minna',d:'Minna',r:'Nigéria',p:'Nigéria',t:'geographic'},
+  {c:'4221',n:'Cape',d:'Cape',r:'Afrique du Sud',p:'Afrique du Sud',t:'geographic'},
+  {c:'4205',n:'Hartebeesthoek94',d:'Hartebeesthoek94',r:'Afrique du Sud',p:'Afrique du Sud',t:'geographic'},
+  {c:'4168',n:'Accra 1930',d:'Accra1930',r:'Ghana',p:'Ghana',t:'geographic'},
+  {c:'22032',n:'Locodjo 1965 / UTM 32N',d:'Locodjo1965',r:'Côte d\'Ivoire',p:'Côte d\'Ivoire',t:'projected'},
+  
+  // RUSSIE / CEI
+  {c:'4284',n:'Pulkovo 1942',d:'Pulkovo1942',r:'Russie/CEI',p:'Russie',t:'geographic'},
+  {c:'4178',n:'Pulkovo 1995',d:'Pulkovo1995',r:'Russie',p:'Russie',t:'geographic'},
+  
+  // SYSTÈMES EUROPÉENS LOCAUX
+  {c:'4312',n:'MGI',d:'MGI',r:'Autriche',p:'Autriche',t:'geographic'},
+  {c:'21781',n:'CH1903 / LV03',d:'CH1903',r:'Suisse',p:'Suisse',t:'projected'},
+  {c:'2056',n:'CH1903+ / LV95',d:'CH1903+',r:'Suisse',p:'Suisse',t:'projected'},
+  {c:'31370',n:'Belge 1972 / Lambert 72',d:'Belge1972',r:'Belgique',p:'Belgique',t:'projected'},
+  {c:'4314',n:'DHDN',d:'DHDN',r:'Allemagne',p:'Allemagne',t:'geographic'},
+  {c:'4292',n:'OSGB 1936',d:'OSGB1936',r:'Royaume-Uni',p:'Royaume-Uni',t:'geographic'},
+  {c:'27700',n:'OSGB / British National Grid',d:'OSGB1936',r:'Royaume-Uni',p:'Royaume-Uni',t:'projected'},
+  {c:'4300',n:'TM65',d:'TM65',r:'Irlande',p:'Irlande',t:'geographic'},
+  {c:'29903',n:'OSNI 1952 / Irish National Grid',d:'OSNI1952',r:'Irlande',p:'Irlande',t:'projected'},
+  {c:'4149',n:'HD72',d:'HD72',r:'Hongrie',p:'Hongrie',t:'geographic'},
+  {c:'23700',n:'HD72 / EOV',d:'HD72',r:'Hongrie',p:'Hongrie',t:'projected'},
+  {c:'4134',n:'Dabola 1981',d:'Dabola1981',r:'Guinée',p:'Guinée',t:'geographic'},
+  {c:'4218',n:'ELD79',d:'ELD79',r:'Libye',p:'Libye',t:'geographic'},
+  {c:'4236',n:'TWD97',d:'TWD97',r:'Taiwan',p:'Taiwan',t:'geographic'},
+  {c:'3826',n:'TWD97 / TM2 zone 119',d:'TWD97',r:'Taiwan',p:'Taiwan',t:'projected'},
+  
+  // CLARKE 1880 AUTRES VARIANTS
+  {c:'4012',n:'Clarke 1880 (RGS)',d:'Clarke1880RGS',r:'Royaume-Uni',p:'Royaume-Uni',t:'geographic'},
+  {c:'4013',n:'Clarke 1880 (Arc)',d:'Clarke1880Arc',r:'Afrique Sud',p:'Afrique du Sud',t:'geographic'},
+  {c:'4014',n:'Clarke 1880 (Benoit)',d:'Clarke1880Benoit',r:'Afrique',p:'Afrique',t:'geographic'},
+  {c:'4034',n:'Clarke 1880',d:'Clarke1880',r:'Général',p:'International',t:'geographic'},
+  {c:'4018',n:'Clarke 1866',d:'Clarke1866',r:'Amérique Nord',p:'USA',t:'geographic'}
+];
+
+// ===== PAYS (sans Sénégal, Maroc, Algérie, Egypte, Türkiye, Syria, Espagne) =====
+const COUNTRIES = ['Tunisie','France','Italie','Libye','Allemagne','Belgique','Suisse','Canada','USA','Brésil','Australie','Chine','Japon','Inde','Russie','Arabie Saoudite','Iran','Irak','Jordanie','Liban','Israël','Koweït','Qatar','EAU','Nigéria','Ghana','Kenya','Afrique du Sud','Ethiopie','Royaume-Uni','Irlande','Pays-Bas','Luxembourg','Autriche','Pologne','République Tchèque','Hongrie','Roumanie','Bulgarie','Grèce','Chypre','Malte','Croatie','Serbie','Ukraine','Suède','Norvège','Danemark','Finlande','Islande','Portugal','Mexique','Argentine','Chili','Colombie','Pérou','Thaïlande','Vietnam','Malaisie','Singapour','Indonésie','Philippines','Corée du Sud','Taiwan','Nouvelle-Zélande','Zimbabwe','Mozambique','Tanzanie','Zambie','Madagascar','Côte d\'Ivoire','Guinée','Bahreïn','Oman','International'];
+
+// ===== ZONES PAR PAYS =====
+const ZONES = {
+  'Tunisie':['Nord','Centre','Sud','Djerba','Kerkennah','Sfax','Tunis','Sousse'],
+  'France':['Nord','Centre','Sud','Corse','DOM-TOM','Lambert I','Lambert II','Lambert III','Lambert IV'],
+  'Italie':['Nord','Centre','Sud','Sicile','Sardaigne'],
+  'Libye':['Tripolitaine','Cyrénaïque','Fezzan'],
+  'Allemagne':['Nord','Centre','Sud','Est','Ouest'],
+  'USA':['Est','Centre','Ouest','Alaska','Hawaii','Zone 10N','Zone 11N','Zone 12N','Zone 13N','Zone 14N','Zone 15N','Zone 16N','Zone 17N','Zone 18N','Zone 19N'],
+  'Canada':['Est','Centre','Ouest','Nord','Zone 17N','Zone 18N','Zone 19N','Zone 20N','Zone 21N'],
+  'Brésil':['Nord','Nord-Est','Centre-Ouest','Sud-Est','Sud','Zone 22S','Zone 23S','Zone 24S','Zone 25S'],
+  'Australie':['Ouest','Centre','Nord','Est','Sud','Zone 50','Zone 51','Zone 52','Zone 53','Zone 54','Zone 55','Zone 56'],
+  'Chine':['Nord','Est','Sud','Ouest','Centre'],
+  'Russie':['Ouest','Centre','Sibérie','Extrême-Orient'],
+  'Arabie Saoudite':['Centre','Ouest','Est','Sud','Nord'],
+  'Japon':['Hokkaido','Honshu','Shikoku','Kyushu','Okinawa'],
+  'Inde':['Nord','Sud','Est','Ouest','Centre'],
+  'Royaume-Uni':['Angleterre','Écosse','Pays de Galles','Irlande du Nord'],
+  'International':['Monde','Global','Général']
+};
+
+// ===== PRESETS =====
+const PRESETS = [
+  {n:'Carthage → WGS84 (Tunisie)',dx:-263,dy:6,dz:431},
+  {n:'NTF → WGS84 (France)',dx:-168,dy:-60,dz:320},
+  {n:'ED50 → WGS84 (Europe)',dx:-87,dy:-98,dz:-121},
+  {n:'NAD27 → NAD83 (USA)',dx:-8,dy:160,dz:176},
+  {n:'Nord Sahara 1959 → WGS84',dx:-187,dy:-254,dz:235},
+  {n:'Pulkovo 1942 → WGS84',dx:23.92,dy:-141.27,dz:-80.9},
+  {n:'Ain el Abd → WGS84',dx:-150,dy:-248,dz:-233}
+];
+
+// ===== DATUMS =====
+const DATUMS = [
+  {n:'WGS84',e:'WGS 84',r:'Monde'},
+  {n:'Clarke 1880 IGN',e:'Clarke 1880 (IGN)',r:'France / Tunisie'},
+  {n:'Carthage',e:'Clarke 1880 IGN',r:'Tunisie'},
+  {n:'Nord Sahara 1959',e:'Clarke 1880 IGN',r:'Algérie'},
+  {n:'ED50',e:'International 1924',r:'Europe'},
+  {n:'ETRS89',e:'GRS 1980',r:'Europe'},
+  {n:'NAD27',e:'Clarke 1866',r:'Amérique Nord'},
+  {n:'NAD83',e:'GRS 1980',r:'Amérique Nord'},
+  {n:'SIRGAS 2000',e:'GRS 1980',r:'Amérique Sud'},
+  {n:'GDA94',e:'GRS 1980',r:'Australie'},
+  {n:'Pulkovo 1942',e:'Krassowsky 1940',r:'Russie / CEI'},
+  {n:'Ain el Abd 1970',e:'International 1924',r:'Arabie Saoudite'},
+  {n:'Arc 1950',e:'Clarke 1880 (Arc)',r:'Afrique Australe'},
+  {n:'OSGB 1936',e:'Airy 1830',r:'Royaume-Uni'}
+];
+
+// ===== STATE =====
+let DB = {points:[],projects:[],transforms:[],params:[]};
+let importedPts = [];
+let dxfData = null;
+let planMap = null;
+let planMarkers = [];
+let log = [];
+let currentDBTab = 'proj';
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  initEPSGSelects();
+  initCountryFilters();
+  loadDB();
+  setupDrop();
+  populatePresets();
+  populateEPSGTable();
+  populateDatumsTable();
+  add7p();add7p();add7p();
+  document.getElementById('plDate').value = new Date().toISOString().split('T')[0];
+  logMsg('🚀 Application démarrée - v5.0 PREMIUM');
+  updStats();
+});
+
+function logMsg(m){
+  const t = new Date().toLocaleTimeString();
+  log.unshift(`[${t}] ${m}`);
+  if(log.length>200) log.pop();
+  const box = document.getElementById('logBox');
+  if(box) box.textContent = log.join('\n');
+  document.getElementById('statusMsg').textContent = m;
+}
+
+// ===== MENUS =====
+function toggleMenu(e,id){
+  e.stopPropagation();
+  const dd = document.getElementById(id);
+  const wasOpen = dd.classList.contains('show');
+  closeMenus();
+  if(!wasOpen) dd.classList.add('show');
+}
+function closeMenus(){
+  document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('show'));
+}
+document.addEventListener('click',closeMenus);
+
+// ===== EPSG SELECTS =====
+function initEPSGSelects(){
+  const ids = ['srcEPSG','tgtEPSG','dxfSrc','dxfTgt'];
+  ids.forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Sélectionner...</option>';
+    EPSG_DB.forEach(e=>{
+      const o = document.createElement('option');
+      o.value = e.c;
+      o.textContent = `${e.c} - ${e.n} (${e.p})`;
+      sel.appendChild(o);
+    });
+  });
+}
+
+function initCountryFilters(){
+  ['dbCountry','plCountry'].forEach(id=>{
+    const sel = document.getElementById(id);
+    if(!sel) return;
+    sel.innerHTML = '<option value="">Tous les pays</option>';
+    COUNTRIES.forEach(c=>{
+      const o = document.createElement('option');
+      o.value = c; o.textContent = c;
+      sel.appendChild(o);
+    });
+  });
+  updDBZones();
+  updPlanZones();
+}
+
+function updDBZones(){
+  const c = document.getElementById('dbCountry').value;
+  const sel = document.getElementById('dbZone');
+  sel.innerHTML = '<option value="">Toutes les zones</option>';
+  let zones = [];
+  if(c && ZONES[c]) zones = ZONES[c];
+  else Object.values(ZONES).forEach(z=>zones=zones.concat(z));
+  zones = [...new Set(zones)];
+  zones.forEach(z=>{
+    const o = document.createElement('option');
+    o.value = z; o.textContent = z;
+    sel.appendChild(o);
+  });
+}
+
+function updPlanZones(){
+  const c = document.getElementById('plCountry').value;
+  const sel = document.getElementById('plZone');
+  sel.innerHTML = '<option value="">Toutes les zones</option>';
+  let zones = [];
+  if(c && ZONES[c]) zones = ZONES[c];
+  else Object.values(ZONES).forEach(z=>zones=zones.concat(z));
+  zones = [...new Set(zones)];
+  zones.forEach(z=>{
+    const o = document.createElement('option');
+    o.value = z; o.textContent = z;
+    sel.appendChild(o);
+  });
+  genPlan();
+}
+
+function loadEPSG(type){
+  const code = document.getElementById(type+'EPSG').value;
+  const e = EPSG_DB.find(x=>x.c===code);
+  if(e){
+    document.getElementById(type+'Sys').value = e.n;
+    document.getElementById(type+'Dt').value = e.d;
+    logMsg(`📍 ${type.toUpperCase()} EPSG:${e.c} - ${e.n}`);
+  }
+}
+
+// ===== EPSG TABLE =====
+function populateEPSGTable(){
+  const tb = document.getElementById('tblEPSG').querySelector('tbody');
+  tb.innerHTML = '';
+  EPSG_DB.forEach(e=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${e.c}</b></td><td>${e.n}</td><td>${e.p}</td>
+      <td><button class="btn btn-p" onclick="useEPSG('${e.c}','src')">Source</button>
+      <button class="btn btn-s" onclick="useEPSG('${e.c}','tgt')">Cible</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function schEPSG(){
+  const q = document.getElementById('epsgSch').value.toLowerCase();
+  document.querySelectorAll('#tblEPSG tbody tr').forEach(r=>{
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function useEPSG(c,t){
+  document.getElementById(t+'EPSG').value = c;
+  loadEPSG(t);
+  closeModal('mEPSG');
+}
+
+// ===== DATUMS TABLE =====
+function populateDatumsTable(){
+  const tb = document.getElementById('tblDatums').querySelector('tbody');
+  tb.innerHTML = '';
+  DATUMS.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${d.n}</b></td><td>${d.e}</td><td>${d.r}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ===== MODALS =====
+function showModal(id){
+  document.getElementById(id).classList.add('active');
+  if(id==='mDBModal'){ renderDB(); }
+  if(id==='mPlan'){ initPlan(); }
+  if(id==='mLog'){ document.getElementById('logBox').textContent = log.join('\n') || '[Aucune entrée]'; }
+  if(id==='mMap'){ initMapView(); }
+}
+function closeModal(id){ document.getElementById(id).classList.remove('active'); }
+
+// ===== DRAG & DROP =====
+function setupDrop(){
+  const dz = document.getElementById('dropZone');
+  if(!dz) return;
+  ['dragenter','dragover','dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();}));
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,()=>dz.classList.add('drag')));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,()=>dz.classList.remove('drag')));
+  dz.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+}
+
+function handleFile(e){ handleFiles(e.target.files); }
+
+function handleFiles(files){
+  if(!files.length) return;
+  const f = files[0];
+  const ext = f.name.split('.').pop().toLowerCase();
+  logMsg(`📂 Fichier: ${f.name} (${ext})`);
+  if(['csv','txt'].includes(ext)){
+    const r = new FileReader();
+    r.onload = e=>parseCSV(e.target.result);
+    r.readAsText(f);
+  } else if(ext==='dxf'){
+    const r = new FileReader();
+    r.onload = e=>parseDXF(e.target.result);
+    r.readAsText(f);
+  } else if(ext==='dwg'){
+    alert('⚠️ Format DWG binaire non supporté en JavaScript pur.\nVeuillez convertir en DXF avec AutoCAD ou un convertisseur.');
+  } else {
+    alert('Format non supporté: '+ext);
+  }
+}
+
+// ===== CSV/TXT PARSER =====
+function parseCSV(content){
+  let sep = document.getElementById('sep').value;
+  const defEPSG = document.getElementById('defEPSG').value;
+  const hasHeader = document.getElementById('hasHeader').checked;
+  const lines = content.split(/\r?\n/).filter(l=>l.trim());
+  const pts = [];
+  let start = 0;
+  if(hasHeader || /nom|name|point|id/i.test(lines[0])) start = 1;
+  
+  for(let i=start;i<lines.length;i++){
+    const l = lines[i].trim();
+    if(!l) continue;
+    let v;
+    if(sep==='auto'){
+      if(l.includes(';')) v = l.split(';');
+      else if(l.includes(',')) v = l.split(',');
+      else if(l.includes('\t')) v = l.split('\t');
+      else v = l.split(/\s+/);
+    } else v = l.split(sep==='\\t'?'\t':sep);
+    
+    if(v.length>=4){
+      pts.push({
+        name:v[0].trim(),
+        x:parseFloat(v[1])||0,
+        y:parseFloat(v[2])||0,
+        z:parseFloat(v[3])||0,
+        epsg:(v[4] && /^\d+$/.test(v[4].trim())) ? v[4].trim() : defEPSG,
+        country:v[5]||'',
+        zone:v[6]||''
+      });
+    }
+  }
+  importedPts = pts;
+  document.getElementById('editDXF').style.display = 'none';
+  showCSVPreview(pts);
+  logMsg(`✅ ${pts.length} points CSV/TXT détectés`);
+}
+
+function showCSVPreview(pts){
+  document.getElementById('prevCSV').style.display = 'block';
+  document.getElementById('cntPts').textContent = pts.length;
+  const tb = document.getElementById('tblPrev').querySelector('tbody');
+  tb.innerHTML = '';
+  pts.forEach((p,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${p.epsg}</td><td>${p.x.toFixed(3)}</td><td>${p.y.toFixed(3)}</td><td>${p.z.toFixed(3)}</td><td><span class="badge badge-ok">OK</span></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ===== DXF PARSER + EDITOR =====
+function parseDXF(content){
+  try {
+    const parser = new DxfParser();
+    dxfData = parser.parse(content);
+    const entities = [];
+    const pts = [];
+    const defEPSG = document.getElementById('defEPSG').value;
+    
+    if(dxfData && dxfData.entities){
+      dxfData.entities.forEach((ent,i)=>{
+        if(['POINT','TEXT','MTEXT','INSERT','LINE','CIRCLE','ARC','LWPOLYLINE'].includes(ent.type)){
+          let x=0,y=0,z=0;
+          if(ent.vertices && ent.vertices.length>0){ x=ent.vertices[0].x;y=ent.vertices[0].y;z=ent.vertices[0].z||0; }
+          else if(ent.position){ x=ent.position.x;y=ent.position.y;z=ent.position.z||0; }
+          else if(ent.startPoint){ x=ent.startPoint.x;y=ent.startPoint.y;z=ent.startPoint.z||0; }
+          else if(ent.center){ x=ent.center.x;y=ent.center.y;z=ent.center.z||0; }
+          
+          const name = (ent.type==='TEXT'||ent.type==='MTEXT') ? (ent.text||ent.string||ent.type+'_'+i) : ent.type+'_'+i;
+          const layer = ent.layer || '0';
+          entities.push({id:i,type:ent.type,layer,x,y,z,name});
+          pts.push({name,x,y,z,epsg:defEPSG,country:'',zone:layer});
+        }
+      });
+    }
+    
+    importedPts = pts;
+    showDXFEditor(entities);
+    showCSVPreview(pts);
+    logMsg(`✅ ${entities.length} entités DXF détectées`);
+  } catch(err){
+    alert('Erreur DXF: '+err.message);
+    logMsg('❌ Erreur DXF: '+err.message);
+  }
+}
+
+function showDXFEditor(entities){
+  document.getElementById('editDXF').style.display = 'block';
+  const tb = document.getElementById('tblDXF').querySelector('tbody');
+  tb.innerHTML = '';
+  entities.forEach(e=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${e.type}</td><td>${e.layer}</td>
+      <td class="edit-cell" onclick="editDXF(${e.id},'x',${e.x})">${e.x.toFixed(3)}</td>
+      <td class="edit-cell" onclick="editDXF(${e.id},'y',${e.y})">${e.y.toFixed(3)}</td>
+      <td class="edit-cell" onclick="editDXF(${e.id},'z',${e.z})">${e.z.toFixed(3)}</td>
+      <td class="edit-cell" onclick="editDXFName(${e.id},'${e.name.replace(/'/g,"\\'")}')">${e.name}</td>
+      <td><button class="btn btn-d" onclick="delDXF(${e.id})">🗑️</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function editDXF(id,field,cur){
+  const v = prompt(`Modifier ${field} (actuel: ${cur}):`,cur);
+  if(v!==null && !isNaN(parseFloat(v))){
+    const ent = dxfData.entities[id];
+    if(ent.position) ent.position[field] = parseFloat(v);
+    else if(ent.vertices && ent.vertices[0]) ent.vertices[0][field] = parseFloat(v);
+    else if(ent.center) ent.center[field] = parseFloat(v);
+    else if(ent.startPoint) ent.startPoint[field] = parseFloat(v);
+    importedPts[id][field] = parseFloat(v);
+    showDXFEditor(getDXFEntities());
+    showCSVPreview(importedPts);
+    logMsg(`✏️ DXF ${field} modifié: ${v}`);
+  }
+}
+
+function editDXFName(id,cur){
+  const v = prompt('Modifier le nom:',cur);
+  if(v!==null){
+    importedPts[id].name = v;
+    showDXFEditor(getDXFEntities());
+    showCSVPreview(importedPts);
+  }
+}
+
+function delDXF(id){
+  if(!confirm('Supprimer cette entité?')) return;
+  dxfData.entities[id] = null;
+  importedPts[id] = null;
+  dxfData.entities = dxfData.entities.filter(x=>x);
+  importedPts = importedPts.filter(x=>x);
+  showDXFEditor(getDXFEntities());
+  showCSVPreview(importedPts);
+}
+
+function getDXFEntities(){
+  const res = [];
+  if(!dxfData) return res;
+  let idx = 0;
+  dxfData.entities.forEach((ent)=>{
+    if(!ent) return;
+    let x=0,y=0,z=0;
+    if(ent.vertices && ent.vertices.length>0){ x=ent.vertices[0].x;y=ent.vertices[0].y;z=ent.vertices[0].z||0; }
+    else if(ent.position){ x=ent.position.x;y=ent.position.y;z=ent.position.z||0; }
+    else if(ent.center){ x=ent.center.x;y=ent.center.y;z=ent.center.z||0; }
+    else if(ent.startPoint){ x=ent.startPoint.x;y=ent.startPoint.y; }
+    res.push({id:idx++,type:ent.type,layer:ent.layer||'0',x,y,z,name:importedPts[idx-1]?.name||ent.type+'_'+idx});
+  });
+  return res;
+}
+
+function doImport(){
+  if(!importedPts.length){ alert('Aucun point à importer'); return; }
+  
+  // Appliquer transformation DXF si cochée
+  if(document.getElementById('dxfTrans').checked){
+    const srcC = document.getElementById('dxfSrc').value;
+    const tgtC = document.getElementById('dxfTgt').value;
+    if(srcC && tgtC && srcC!==tgtC){
+      importedPts.forEach(p=>{
+        const r = transformPoint(p.x,p.y,p.z);
+        p.x = r.x; p.y = r.y; p.z = r.z;
+        p.epsg = tgtC;
+      });
+      logMsg(`🔄 Transformation DXF appliquée: ${srcC} → ${tgtC}`);
+    }
+  }
+  
+  importedPts.forEach(p=>{
+    DB.points.push({...p, id:Date.now()+Math.random(), date:new Date().toISOString()});
+  });
+  saveDB();
+  alert(`✅ ${importedPts.length} points importés!`);
+  logMsg(`💾 ${importedPts.length} points importés en DB`);
+  closeModal('mImport');
+  importedPts = [];
+  dxfData = null;
+  document.getElementById('prevCSV').style.display = 'none';
+  document.getElementById('editDXF').style.display = 'none';
+  document.getElementById('fileIn').value = '';
+}
+
+// ===== TRANSFORMATION =====
+function transformPoint(x1,y1,z1){
+  const dx = parseFloat(document.getElementById('tX0').value)||0;
+  const dy = parseFloat(document.getElementById('tY0').value)||0;
+  const dz = parseFloat(document.getElementById('tZ0').value)||0;
+  const ex = parseFloat(document.getElementById('tex').value)||0;
+  const ey = parseFloat(document.getElementById('tey').value)||0;
+  const ez = parseFloat(document.getElementById('tez').value)||0;
+  const m = parseFloat(document.getElementById('tm').value)||0;
+  const arc = Math.PI/(180*3600);
+  const s = 1 + m*1e-6;
+  const x2 = s*(x1 + ez*arc*y1 - ey*arc*z1) + dx;
+  const y2 = s*(-ez*arc*x1 + y1 + ex*arc*z1) + dy;
+  const z2 = s*(ey*arc*x1 - ex*arc*y1 + z1) + dz;
+  return {x:x2,y:y2,z:z2};
+}
+
+function calcTrans(){
+  const src = document.getElementById('srcEPSG').value;
+  const tgt = document.getElementById('tgtEPSG').value;
+  if(!src||!tgt){ alert('Sélectionner EPSG source et cible'); return; }
+  const x1 = parseFloat(document.getElementById('srcX').value)||0;
+  const y1 = parseFloat(document.getElementById('srcY').value)||0;
+  const z1 = parseFloat(document.getElementById('srcZ').value)||0;
+  const r = transformPoint(x1,y1,z1);
+  document.getElementById('tgtName').value = document.getElementById('srcName').value;
+  document.getElementById('tgtX').value = r.x.toFixed(3);
+  document.getElementById('tgtY').value = r.y.toFixed(3);
+  document.getElementById('tgtZ').value = r.z.toFixed(3);
+  document.getElementById('dX').textContent = (r.x-x1).toFixed(3);
+  document.getElementById('dY').textContent = (r.y-y1).toFixed(3);
+  document.getElementById('dZ').textContent = (r.z-z1).toFixed(3);
+  // Approx UTM → lat/lon
+  const lat = 36 + (r.y - 4000000)/111000;
+  const lon = 10 + (r.x - 500000)/(111000*Math.cos(lat*Math.PI/180));
+  document.getElementById('dLat').textContent = lat.toFixed(6)+'°';
+  document.getElementById('dLon').textContent = lon.toFixed(6)+'°';
+  document.getElementById('resBox').style.display = 'block';
+  DB.transforms.push({
+    src,tgt,name:document.getElementById('srcName').value,
+    s:{x:x1,y:y1,z:z1},t:{x:r.x,y:r.y,z:r.z},
+    date:new Date().toISOString()
+  });
+  saveDB();
+  logMsg(`🎯 Transformation: ${src} → ${tgt}`);
+}
+
+function calcInverse(){
+  const s = document.getElementById('srcEPSG').value;
+  const t = document.getElementById('tgtEPSG').value;
+  document.getElementById('srcEPSG').value = t;
+  document.getElementById('tgtEPSG').value = s;
+  loadEPSG('src');loadEPSG('tgt');
+  // Inverser les paramètres
+  ['tX0','tY0','tZ0','tex','tey','tez','tm'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.value = -parseFloat(el.value||0);
+  });
+  const x = document.getElementById('tgtX').value;
+  const y = document.getElementById('tgtY').value;
+  const z = document.getElementById('tgtZ').value;
+  if(x){
+    document.getElementById('srcX').value = x;
+    document.getElementById('srcY').value = y;
+    document.getElementById('srcZ').value = z;
+    calcTrans();
+  }
+  logMsg('🔄 Transformation inverse');
+}
+
+function savePoint(){
+  const p = {
+    id:Date.now(),
+    name:document.getElementById('srcName').value||'Pt_'+Date.now(),
+    epsg:document.getElementById('srcEPSG').value,
+    x:parseFloat(document.getElementById('srcX').value)||0,
+    y:parseFloat(document.getElementById('srcY').value)||0,
+    z:parseFloat(document.getElementById('srcZ').value)||0,
+    country:'',zone:'',
+    date:new Date().toISOString()
+  };
+  DB.points.push(p);
+  saveDB();
+  alert('✅ Point sauvegardé!');
+  logMsg(`💾 Point sauvegardé: ${p.name}`);
+}
+
+function saveResult(){
+  const x = parseFloat(document.getElementById('tgtX').value);
+  if(isNaN(x)){ alert('Aucun résultat à sauvegarder'); return; }
+  const p = {
+    id:Date.now(),
+    name:document.getElementById('tgtName').value||'Pt_'+Date.now(),
+    epsg:document.getElementById('tgtEPSG').value,
+    x:x,
+    y:parseFloat(document.getElementById('tgtY').value)||0,
+    z:parseFloat(document.getElementById('tgtZ').value)||0,
+    country:'',zone:'',
+    date:new Date().toISOString()
+  };
+  DB.points.push(p);
+  saveDB();
+  alert('✅ Résultat sauvegardé!');
+}
+
+function swapSys(){
+  const s = document.getElementById('srcEPSG').value;
+  const t = document.getElementById('tgtEPSG').value;
+  document.getElementById('srcEPSG').value = t;
+  document.getElementById('tgtEPSG').value = s;
+  loadEPSG('src');loadEPSG('tgt');
+  logMsg('🔄 Systèmes inversés');
+}
+
+function resetAll(){
+  if(!confirm('Réinitialiser tous les champs?')) return;
+  ['srcX','srcY','srcZ','srcName','tX0','tY0','tZ0','tex','tey','tez','tm'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = el.id.startsWith('t')?0:'';
+  });
+  document.getElementById('resBox').style.display = 'none';
+  logMsg('🔁 Reset effectué');
+}
+
+function clrFields(){
+  ['srcX','srcY','srcZ','srcName'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('resBox').style.display = 'none';
+}
+
+function setDefTunisie(){
+  document.getElementById('srcEPSG').value = '22332';
+  document.getElementById('tgtEPSG').value = '32632';
+  loadEPSG('src');loadEPSG('tgt');
+  document.getElementById('tX0').value = -263;
+  document.getElementById('tY0').value = 6;
+  document.getElementById('tZ0').value = 431;
+  logMsg('🇹🇳 Défaut Tunisie appliqué');
+}
+
+function setDefED50(){
+  document.getElementById('srcEPSG').value = '23032';
+  document.getElementById('tgtEPSG').value = '32632';
+  loadEPSG('src');loadEPSG('tgt');
+  document.getElementById('tX0').value = -87;
+  document.getElementById('tY0').value = -98;
+  document.getElementById('tZ0').value = -121;
+  logMsg('🇪🇺 ED50 → WGS84 appliqué');
+}
+
+// ===== 7 PARAMETRES =====
+function add7p(){
+  const tb = document.getElementById('tbl7p').querySelector('tbody');
+  const i = tb.children.length+1;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${i}</td><td><input placeholder="Nom"></td>
+    <td><input type="number" step="0.001" placeholder="X1"></td>
+    <td><input type="number" step="0.001" placeholder="Y1"></td>
+    <td><input type="number" step="0.001" placeholder="Z1"></td>
+    <td><input type="number" step="0.001" placeholder="X2"></td>
+    <td><input type="number" step="0.001" placeholder="Y2"></td>
+    <td><input type="number" step="0.001" placeholder="Z2"></td>
+    <td><button class="btn btn-d" onclick="this.closest('tr').remove()">×</button></td>`;
+  tb.appendChild(tr);
+}
+
+function loadEx7p(){
+  clr7p();
+  const ex = [
+    {n:'PT1',x1:500000,y1:4000000,z1:100,x2:500125.5,y2:4000085.2,z2:102.3},
+    {n:'PT2',x1:501000,y1:4001000,z1:150,x2:501125.8,y2:4001085.5,z2:152.1},
+    {n:'PT3',x1:502000,y1:4002000,z1:200,x2:502126.1,y2:4002085.8,z2:201.9},
+    {n:'PT4',x1:503000,y1:4003000,z1:250,x2:503126.4,y2:4003086.1,z2:251.7}
+  ];
+  ex.forEach(p=>{
+    add7p();
+    const r = document.querySelector('#tbl7p tbody tr:last-child');
+    const ins = r.querySelectorAll('input');
+    ins[0].value=p.n;ins[1].value=p.x1;ins[2].value=p.y1;ins[3].value=p.z1;
+    ins[4].value=p.x2;ins[5].value=p.y2;ins[6].value=p.z2;
+  });
+}
+
+function clr7p(){
+  document.querySelector('#tbl7p tbody').innerHTML='';
+  document.getElementById('res7p').style.display='none';
+}
+
+function calc7p(){
+  const rows = document.querySelectorAll('#tbl7p tbody tr');
+  const pts = [];
+  rows.forEach(r=>{
+    const ins = r.querySelectorAll('input');
+    if(ins.length<7) return;
+    const n = ins[0].value;
+    const x1=parseFloat(ins[1].value)||0, y1=parseFloat(ins[2].value)||0, z1=parseFloat(ins[3].value)||0;
+    const x2=parseFloat(ins[4].value)||0, y2=parseFloat(ins[5].value)||0, z2=parseFloat(ins[6].value)||0;
+    if(n) pts.push({n,x1,y1,z1,x2,y2,z2});
+  });
+  if(pts.length<3){ alert('Minimum 3 points requis'); return; }
+  
+  let sdx=0,sdy=0,sdz=0;
+  pts.forEach(p=>{sdx+=(p.x2-p.x1);sdy+=(p.y2-p.y1);sdz+=(p.z2-p.z1);});
+  const dx=sdx/pts.length, dy=sdy/pts.length, dz=sdz/pts.length;
+  
+  const tb = document.getElementById('tblRes7p');
+  tb.innerHTML = `<thead><tr><th>Paramètre</th><th>Valeur</th><th>Unité</th></tr></thead><tbody>
+    <tr><td>ΔX (Translation X)</td><td>${dx.toFixed(4)}</td><td>m</td></tr>
+    <tr><td>ΔY (Translation Y)</td><td>${dy.toFixed(4)}</td><td>m</td></tr>
+    <tr><td>ΔZ (Translation Z)</td><td>${dz.toFixed(4)}</td><td>m</td></tr>
+    <tr><td>ex (Rotation X)</td><td>0.0000</td><td>"</td></tr>
+    <tr><td>ey (Rotation Y)</td><td>0.0000</td><td>"</td></tr>
+    <tr><td>ez (Rotation Z)</td><td>0.0000</td><td>"</td></tr>
+    <tr><td>m (Échelle)</td><td>0.000</td><td>ppm</td></tr>
+  </tbody>`;
+  
+  const tb2 = document.getElementById('tblResid');
+  tb2.innerHTML = `<thead><tr><th>Point</th><th>ΔX</th><th>ΔY</th><th>ΔZ</th><th>Total</th></tr></thead><tbody></tbody>`;
+  const tb2b = tb2.querySelector('tbody');
+  pts.forEach(p=>{
+    const rx=p.x2-(p.x1+dx), ry=p.y2-(p.y1+dy), rz=p.z2-(p.z1+dz);
+    const t = Math.sqrt(rx*rx+ry*ry+rz*rz);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.n}</td><td>${rx.toFixed(4)}</td><td>${ry.toFixed(4)}</td><td>${rz.toFixed(4)}</td><td>${t.toFixed(4)}</td>`;
+    tb2b.appendChild(tr);
+  });
+  
+  document.getElementById('res7p').style.display='block';
+  DB.params.push({n:'Param_'+Date.now(),dx,dy,dz,ex:0,ey:0,ez:0,m:0,date:new Date().toISOString()});
+  saveDB();
+  logMsg(`🎯 7-Param calculés: ${pts.length} points`);
+}
+
+function apply7p(){
+  const rows = document.querySelectorAll('#tblRes7p tbody tr');
+  document.getElementById('tX0').value = rows[0].querySelectorAll('td')[1].textContent;
+  document.getElementById('tY0').value = rows[1].querySelectorAll('td')[1].textContent;
+  document.getElementById('tZ0').value = rows[2].querySelectorAll('td')[1].textContent;
+  alert('✅ Paramètres appliqués');
+  closeModal('m7param');
+}
+
+function save7p(){
+  saveDB();
+  alert('✅ Paramètres sauvegardés');
+}
+
+function saveParams(){
+  DB.params.push({
+    n:'Manual_'+Date.now(),
+    dx:parseFloat(document.getElementById('tX0').value)||0,
+    dy:parseFloat(document.getElementById('tY0').value)||0,
+    dz:parseFloat(document.getElementById('tZ0').value)||0,
+    ex:parseFloat(document.getElementById('tex').value)||0,
+    ey:parseFloat(document.getElementById('tey').value)||0,
+    ez:parseFloat(document.getElementById('tez').value)||0,
+    m:parseFloat(document.getElementById('tm').value)||0,
+    date:new Date().toISOString()
+  });
+  saveDB();
+  alert('✅ Paramètres sauvegardés');
+}
+
+// ===== DATABASE =====
+function loadDB(){
+  const s = localStorage.getItem('subtopo_db_v5');
+  if(s) DB = JSON.parse(s);
+  updStats();
+}
+function saveDB(){
+  localStorage.setItem('subtopo_db_v5',JSON.stringify(DB));
+  updStats();
+  document.getElementById('stPtsCount').textContent = DB.points.length;
+}
+function updStats(){
+  document.getElementById('stProj').textContent = DB.projects.length;
+  document.getElementById('stPts').textContent = DB.points.length;
+  document.getElementById('stTrans').textContent = DB.transforms.length;
+  document.getElementById('stPar').textContent = DB.params.length;
+  document.getElementById('stPtsCount').textContent = DB.points.length;
+}
+
+function dbTab(t,el){
+  currentDBTab = t;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  renderDB();
+}
+
+function renderDB(){
+  const tb = document.getElementById('tblDB').querySelector('tbody');
+  const thead = document.getElementById('tblDB').querySelector('thead');
+  tb.innerHTML = '';
+  
+  if(currentDBTab==='proj'){
+    thead.innerHTML = '<tr><th>#</th><th>Nom</th><th>Date</th><th>Actions</th></tr>';
+    DB.projects.forEach((p,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${(p.date||'').split('T')[0]}</td><td><button class="btn btn-d" onclick="delProj(${i})">🗑️</button></td>`;
+      tb.appendChild(tr);
+    });
+  } else if(currentDBTab==='points'){
+    thead.innerHTML = '<tr><th>#</th><th>Nom</th><th>Pays</th><th>Zone</th><th>EPSG</th><th>X (m)</th><th>Y (m)</th><th>Z (m)</th><th>Actions</th></tr>';
+    filterDB();
+  } else if(currentDBTab==='trans'){
+    thead.innerHTML = '<tr><th>#</th><th>Point</th><th>Src</th><th>Tgt</th><th>X</th><th>Y</th><th>Date</th><th>Act</th></tr>';
+    DB.transforms.forEach((t,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${t.name||''}</td><td>${t.src}</td><td>${t.tgt}</td><td>${t.s.x.toFixed(3)}</td><td>${t.s.y.toFixed(3)}</td><td>${(t.date||'').split('T')[0]}</td><td><button class="btn btn-d" onclick="delTrans(${i})">🗑️</button></td>`;
+      tb.appendChild(tr);
+    });
+  } else if(currentDBTab==='params'){
+    thead.innerHTML = '<tr><th>#</th><th>Nom</th><th>Src</th><th>Tgt</th><th>X0</th><th>Y0</th><th>Z0</th><th>m</th><th>Act</th></tr>';
+    DB.params.forEach((p,i)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${p.n}</td><td>-</td><td>-</td><td>${p.dx.toFixed(3)}</td><td>${p.dy.toFixed(3)}</td><td>${p.dz.toFixed(3)}</td><td>${(p.m||0).toFixed(3)}</td><td><button class="btn btn-d" onclick="delParam(${i})">🗑️</button></td>`;
+      tb.appendChild(tr);
+    });
+  }
+}
+
+function filterDB(){
+  const c = document.getElementById('dbCountry').value;
+  const z = document.getElementById('dbZone').value;
+  const q = document.getElementById('dbSearch').value.toLowerCase();
+  let pts = DB.points;
+  if(c) pts = pts.filter(p=>p.country===c);
+  if(z) pts = pts.filter(p=>p.zone===z);
+  if(q) pts = pts.filter(p=>(p.name||'').toLowerCase().includes(q));
+  
+  const tb = document.getElementById('tblDB').querySelector('tbody');
+  tb.innerHTML = '';
+  pts.forEach((p,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${p.name}</td>
+      <td><select onchange="updPtCountry(${p.id},this.value)">
+        <option value="">-</option>${COUNTRIES.map(c=>`<option ${p.country===c?'selected':''}>${c}</option>`).join('')}</select></td>
+      <td><input value="${p.zone||''}" onchange="updPtZone(${p.id},this.value)" style="width:80px"></td>
+      <td>${p.epsg}</td>
+      <td>${p.x.toFixed(3)}</td><td>${p.y.toFixed(3)}</td><td>${p.z.toFixed(3)}</td>
+      <td><button class="btn btn-i" onclick="loadPt(${p.id})">📥</button>
+      <button class="btn btn-p" onclick="showFiche(${p.id})">📋</button>
+      <button class="btn btn-d" onclick="delPt(${p.id})">🗑️</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function updPtCountry(id,v){
+  const p = DB.points.find(x=>x.id===id);
+  if(p){ p.country = v; saveDB(); }
+}
+function updPtZone(id,v){
+  const p = DB.points.find(x=>x.id===id);
+  if(p){ p.zone = v; saveDB(); }
+}
+
+function loadPt(id){
+  const p = DB.points.find(x=>x.id===id);
+  if(!p) return;
+  document.getElementById('srcName').value = p.name;
+  document.getElementById('srcX').value = p.x;
+  document.getElementById('srcY').value = p.y;
+  document.getElementById('srcZ').value = p.z;
+  document.getElementById('srcEPSG').value = p.epsg;
+  loadEPSG('src');
+  closeModal('mDBModal');
+}
+
+function showFiche(id){
+  const p = DB.points.find(x=>x.id===id);
+  if(!p) return;
+  const epsg = EPSG_DB.find(e=>e.c===p.epsg);
+  document.getElementById('ficheContent').innerHTML = `
+    <div style="background:#1e2a38;padding:15px;border-radius:6px">
+      <h3 style="color:#ffd700">📋 ${p.name}</h3>
+      <div class="info-row"><span>EPSG:</span><span>${p.epsg} - ${epsg?epsg.n:'-'}</span></div>
+      <div class="info-row"><span>Datum:</span><span>${epsg?epsg.d:'-'}</span></div>
+      <div class="info-row"><span>Pays:</span><span>${p.country||'-'}</span></div>
+      <div class="info-row"><span>Zone:</span><span>${p.zone||'-'}</span></div>
+      <div class="info-row"><span>X:</span><span>${p.x.toFixed(3)} m</span></div>
+      <div class="info-row"><span>Y:</span><span>${p.y.toFixed(3)} m</span></div>
+      <div class="info-row"><span>Z:</span><span>${p.z.toFixed(3)} m</span></div>
+      <div class="info-row"><span>Date:</span><span>${(p.date||'').split('T')[0]}</span></div>
+    </div>`;
+  showModal('mFiche');
+}
+
+function exportFichePDF(){
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    pdf.setFillColor(26,41,128);
+    pdf.rect(0,0,210,30,'F');
+    pdf.setTextColor(255,215,0);
+    pdf.setFontSize(16);
+    pdf.text('FICHE SIGNALÉTIQUE',105,15,{align:'center'});
+    pdf.setFontSize(10);
+    pdf.text('Point Géodésique - SubTopo Engineering',105,23,{align:'center'});
+    
+    const content = document.getElementById('ficheContent').textContent;
+    pdf.setTextColor(0);
+    pdf.setFontSize(11);
+    const lines = content.split('\n').filter(l=>l.trim());
+    let y = 50;
+    lines.forEach(l=>{
+      pdf.text(l.trim(),20,y);
+      y+=8;
+    });
+    
+    pdf.setFontSize(8);
+    pdf.text('SubTopo Engineering - NASRAOUI FATHI - v5.0 PREMIUM',105,285,{align:'center'});
+    pdf.save('fiche_point_'+Date.now()+'.pdf');
+  } catch(err){ alert('Erreur: '+err.message); }
+}
+
+function delPt(id){
+  if(!confirm('Supprimer ce point?')) return;
+  DB.points = DB.points.filter(p=>p.id!==id);
+  saveDB();renderDB();
+}
+function delProj(i){ DB.projects.splice(i,1);saveDB();renderDB(); }
+function delTrans(i){ DB.transforms.splice(i,1);saveDB();renderDB(); }
+function delParam(i){ DB.params.splice(i,1);saveDB();renderDB(); }
+
+function fillDB(){
+  const ex = [
+    {n:'TUN_001',x:611324.5,y:4078642.3,z:50,epsg:'32632',country:'Tunisie',zone:'Tunis'},
+    {n:'TUN_002',x:612450.8,y:4079125.6,z:55,epsg:'32632',country:'Tunisie',zone:'Sousse'},
+    {n:'FRA_001',x:652450.2,y:6862340.5,z:120,epsg:'2154',country:'France',zone:'Centre'},
+    {n:'ITA_001',x:524680.3,y:4578230.8,z:85,epsg:'32633',country:'Italie',zone:'Nord'},
+    {n:'USA_001',x:545620.1,y:4182450.3,z:250,epsg:'32611',country:'USA',zone:'Zone 11N'}
+  ];
+  ex.forEach(p=>{
+    DB.points.push({...p,id:Date.now()+Math.random(),date:new Date().toISOString()});
+  });
+  saveDB();renderDB();
+  alert('✅ Points exemple ajoutés');
+}
+
+function expDB(){
+  const b = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=u;a.download='subtopo_db_'+new Date().toISOString().split('T')[0]+'.json';a.click();
+}
+
+function impDBF(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = ev=>{
+    try {
+      const d = JSON.parse(ev.target.result);
+      DB = {...DB,...d};
+      saveDB();renderDB();
+      alert('✅ DB importée');
+    } catch(err){ alert('Erreur: '+err.message); }
+  };
+  r.readAsText(f);
+}
+
+function clrDB(){
+  if(!confirm('Effacer toute la DB?')) return;
+  DB = {points:[],projects:[],transforms:[],params:[]};
+  saveDB();renderDB();
+}
+
+function showMapView(){
+  closeModal('mDBModal');
+  showModal('mMap');
+}
+
+function initMapView(){
+  setTimeout(()=>{
+    const mapDiv = document.getElementById('mapView');
+    if(mapDiv._leaflet_id){ return; }
+    const map = L.map('mapView').setView([36.8,10.18],6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OSM'
+    }).addTo(map);
+    
+    DB.points.forEach(p=>{
+      const lat = 36 + (p.y - 4000000)/111000;
+      const lon = 10 + (p.x - 500000)/(111000*Math.cos(lat*Math.PI/180));
+      const color = p.country ? '#27ae60' : '#3498db';
+      L.circleMarker([lat,lon],{radius:6,fillColor:color,color:'#fff',weight:2,fillOpacity:0.8})
+        .addTo(map)
+        .bindPopup(`<b>${p.name}</b><br>X: ${p.x.toFixed(3)}<br>Y: ${p.y.toFixed(3)}<br>Z: ${p.z.toFixed(3)}<br>EPSG: ${p.epsg}`);
+    });
+  },200);
+}
+
+// ===== PRESETS =====
+function populatePresets(){
+  const tb = document.getElementById('tblPre').querySelector('tbody');
+  tb.innerHTML = '';
+  PRESETS.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${p.n}</td><td>${p.dx}</td><td>${p.dy}</td><td>${p.dz}</td>
+      <td><button class="btn btn-s" onclick="applyPreset('${p.n}')">Appliquer</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function applyPreset(name){
+  const p = PRESETS.find(x=>x.n===name);
+  if(!p) return;
+  document.getElementById('tX0').value = p.dx;
+  document.getElementById('tY0').value = p.dy;
+  document.getElementById('tZ0').value = p.dz;
+  closeModal('mPresets');
+  alert('✅ Preset appliqué: '+name);
+  logMsg(`⚙️ Preset appliqué: ${name}`);
+}
+
+// ===== PROJET =====
+function createProject(){
+  const p = {
+    name:document.getElementById('newProjName').value,
+    client:document.getElementById('newProjClient').value,
+    desc:document.getElementById('newProjDesc').value,
+    date:new Date().toISOString()
+  };
+  if(!p.name){ alert('Nom requis'); return; }
+  DB.projects.push(p);
+  saveDB();
+  closeModal('mNouveau');
+  alert('✅ Projet créé');
+  logMsg(`📄 Projet créé: ${p.name}`);
+}
+
+function saveProject(){
+  const name = prompt('Nom du fichier projet:','projet_'+Date.now());
+  if(!name) return;
+  const b = new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=u;a.download=name+'.json';a.click();
+  logMsg(`💾 Projet sauvegardé: ${name}`);
+}
+
+// ===== PLAN PRO =====
+function initPlan(){
+  setTimeout(()=>{
+    if(!planMap){
+      planMap = L.map('planMap').setView([36.8,10.18],13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        attribution:'© OSM'
+      }).addTo(planMap);
+    }
+    planMap.invalidateSize();
+    genPlan();
+  },200);
+}
+
+function genPlan(){
+  if(!planMap) return;
+  planMarkers.forEach(m=>planMap.removeLayer(m));
+  planMarkers = [];
+  
+  const c = document.getElementById('plCountry').value;
+  const z = document.getElementById('plZone').value;
+  let pts = DB.points;
+  if(c) pts = pts.filter(p=>p.country===c);
+  if(z) pts = pts.filter(p=>p.zone===z);
+  
+  const emptyMsg = document.getElementById('plEmptyMsg');
+  
+  if(!pts.length){
+    document.getElementById('plNbPts').textContent = '0';
+    emptyMsg.style.display = 'block';
+    emptyMsg.textContent = 'Aucun point';
+    return;
+  }
+  
+  emptyMsg.style.display = 'none';
+  
+  pts.forEach(p=>{
+    const lat = 36 + (p.y - 4000000)/111000;
+    const lon = 10 + (p.x - 500000)/(111000*Math.cos(lat*Math.PI/180));
+    
+    const icon = L.divIcon({
+      className:'custom-marker',
+      html:`<div style="background:#e74c3c;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;border:2px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.4);white-space:nowrap">${p.name}</div>`,
+      iconSize:[80,25],iconAnchor:[40,12]
+    });
+    
+    const m = L.marker([lat,lon],{icon})
+      .addTo(planMap)
+      .bindPopup(`<b>${p.name}</b><br>X: ${p.x.toFixed(3)}<br>Y: ${p.y.toFixed(3)}<br>Z: ${p.z.toFixed(3)}<br>EPSG: ${p.epsg}<br>Pays: ${p.country||'-'}<br>Zone: ${p.zone||'-'}`);
+    planMarkers.push(m);
+  });
+  
+  if(planMarkers.length){
+    const g = L.featureGroup(planMarkers);
+    planMap.fitBounds(g.getBounds().pad(0.1));
+  }
+  
+  document.getElementById('plNbPts').textContent = pts.length;
+  document.getElementById('plZoneInf').textContent = z || 'Toutes';
+  document.getElementById('plSysInf').textContent = pts[0].epsg || '-';
+  document.getElementById('plScInf').textContent = 'Auto';
+}
+
+// ===== EXPORT PDF PLAN =====
+function exportPlanPDF(){
+  try {
+    const { jsPDF } = window.jspdf;
+    const fmt = document.getElementById('plFmt').value;
+    let orient = 'landscape', w=297, h=210;
+    if(fmt==='A4P'){ orient='portrait'; w=210; h=297; }
+    else if(fmt==='A3L'){ w=420; h=297; }
+    
+    const pdf = new jsPDF({orientation:orient,unit:'mm',format:[w,h]});
+    
+    // Titre
+    pdf.setFillColor(26,41,128);
+    pdf.rect(0,0,w,15,'F');
+    pdf.setTextColor(255,215,0);
+    pdf.setFontSize(16);
+    pdf.text('PLAN TOPOGRAPHIQUE - SubTopo Engineering',5,10);
+    
+    // Infos
+    pdf.setTextColor(0,0,0);
+    pdf.setFontSize(10);
+    pdf.text('Projet: '+(document.getElementById('plProj').value||'-'),5,25);
+    pdf.text('Client: '+(document.getElementById('plCli').value||'-'),5,32);
+    pdf.text('Date: '+document.getElementById('plDate').value,5,39);
+    pdf.text('Zone: '+document.getElementById('plZoneInf').textContent,5,46);
+    pdf.text('Système: '+document.getElementById('plSysInf').textContent,5,53);
+    pdf.text('Échelle: '+document.getElementById('plScInf').textContent,5,60);
+    pdf.text('Nb Points: '+document.getElementById('plNbPts').textContent,5,67);
+    pdf.text('Dessiné par: NASRAOUI FATHI',5,74);
+    
+    // Cartouche
+    const cbw = 100, cbh = 60;
+    pdf.setDrawColor(0);
+    pdf.setLineWidth(0.5);
+    pdf.rect(w-cbw-5,h-cbh-5,cbw,cbh);
+    pdf.setFillColor(26,41,128);
+    pdf.rect(w-cbw-5,h-cbh-5,cbw,10,'F');
+    pdf.setTextColor(255,215,0);
+    pdf.setFontSize(11);
+    pdf.text('PLAN TOPOGRAPHIQUE',w-cbw-5+cbw/2,h-cbh+3,{align:'center'});
+    
+    pdf.setTextColor(0);
+    pdf.setFontSize(8);
+    const cx = w-cbw-3;
+    let cy = h-cbh+15;
+    pdf.text('Projet: '+(document.getElementById('plProj').value||'-'),cx,cy);cy+=6;
+    pdf.text('Client: '+(document.getElementById('plCli').value||'-'),cx,cy);cy+=6;
+    pdf.text('Date: '+document.getElementById('plDate').value,cx,cy);cy+=6;
+    pdf.text('Zone: '+document.getElementById('plZoneInf').textContent,cx,cy);cy+=6;
+    pdf.text('Système: '+document.getElementById('plSysInf').textContent,cx,cy);cy+=6;
+    pdf.text('Échelle: '+document.getElementById('plScInf').textContent,cx,cy);cy+=6;
+    pdf.text('Nb Points: '+document.getElementById('plNbPts').textContent,cx,cy);cy+=6;
+    pdf.text('Dessiné: NASRAOUI FATHI',cx,cy);cy+=6;
+    pdf.setFillColor(26,41,128);
+    pdf.rect(cx-2,cy-3,cbw-2,8,'F');
+    pdf.setTextColor(255,215,0);
+    pdf.text('SubTopo Engineering © 2025',cx+cbw/2-2,cy+2,{align:'center'});
+    
+    // Tableau des points
+    const c = document.getElementById('plCountry').value;
+    const z = document.getElementById('plZone').value;
+    let pts = DB.points;
+    if(c) pts = pts.filter(p=>p.country===c);
+    if(z) pts = pts.filter(p=>p.zone===z);
+    
+    pdf.setTextColor(0);
+    pdf.setFontSize(10);
+    let y = 85;
+    pdf.text('LISTE DES POINTS',5,y);y+=5;
+    pdf.setFontSize(7);
+    pdf.setFillColor(26,41,128);
+    pdf.setTextColor(255,215,0);
+    pdf.rect(5,y,w-110,6,'F');
+    pdf.text('#',7,y+4);pdf.text('Nom',20,y+4);pdf.text('EPSG',60,y+4);
+    pdf.text('X (m)',80,y+4);pdf.text('Y (m)',110,y+4);pdf.text('Z (m)',140,y+4);
+    y+=6;
+    pdf.setTextColor(0);
+    pts.forEach((p,i)=>{
+      if(y>h-70){ pdf.addPage(); y=20; }
+      pdf.text(String(i+1),7,y);
+      pdf.text(String(p.name),20,y);
+      pdf.text(String(p.epsg),60,y);
+      pdf.text(p.x.toFixed(3),80,y);
+      pdf.text(p.y.toFixed(3),110,y);
+      pdf.text(p.z.toFixed(3),140,y);
+      y+=5;
+    });
+    
+    pdf.save('plan_topo_'+new Date().toISOString().split('T')[0]+'.pdf');
+    logMsg('📑 PDF plan exporté');
+  } catch(err){
+    alert('Erreur PDF: '+err.message);
+  }
+}
+
+// ===== EXPORT DXF PLAN =====
+function exportPlanDXF(){
+  const c = document.getElementById('plCountry').value;
+  const z = document.getElementById('plZone').value;
+  let pts = DB.points;
+  if(c) pts = pts.filter(p=>p.country===c);
+  if(z) pts = pts.filter(p=>p.zone===z);
+  
+  let dxf = '0\nSECTION\n2\nHEADER\n';
+  dxf += '9\n$ACADVER\n1\nAC1015\n';
+  dxf += '9\n$INSUNITS\n70\n6\n';
+  dxf += '0\nENDSEC\n';
+  dxf += '0\nSECTION\n2\nTABLES\n';
+  dxf += '0\nTABLE\n2\nLAYER\n70\n3\n';
+  dxf += '0\nLAYER\n2\nPOINTS\n70\n0\n62\n7\n6\nCONTINUOUS\n';
+  dxf += '0\nLAYER\n2\nTEXT\n70\n0\n62\n3\n6\nCONTINUOUS\n';
+  dxf += '0\nLAYER\n2\nCARTOUCHE\n70\n0\n62\n5\n6\nCONTINUOUS\n';
+  dxf += '0\nENDTAB\n0\nENDSEC\n';
+  dxf += '0\nSECTION\n2\nENTITIES\n';
+  
+  pts.forEach(p=>{
+    dxf += `0\nPOINT\n8\nPOINTS\n10\n${p.x}\n20\n${p.y}\n30\n${p.z}\n`;
+  });
+  
+  pts.forEach(p=>{
+    dxf += `0\nTEXT\n8\nTEXT\n10\n${p.x+2}\n20\n${p.y+2}\n30\n0\n40\n2\n1\n${p.name}\n`;
+  });
+  
+  if(pts.length){
+    const cx = Math.max(...pts.map(p=>p.x))+50;
+    const cy = Math.min(...pts.map(p=>p.y))-50;
+    dxf += `0\nLWPOLYLINE\n8\nCARTOUCHE\n90\n4\n70\n1\n`;
+    dxf += `10\n${cx}\n20\n${cy}\n`;
+    dxf += `10\n${cx+100}\n20\n${cy}\n`;
+    dxf += `10\n${cx+100}\n20\n${cy-40}\n`;
+    dxf += `10\n${cx}\n20\n${cy-40}\n`;
+    
+    dxf += `0\nTEXT\n8\nCARTOUCHE\n10\n${cx+5}\n20\n${cy-5}\n40\n3\n1\nPLAN TOPOGRAPHIQUE\n`;
+    dxf += `0\nTEXT\n8\nCARTOUCHE\n10\n${cx+5}\n20\n${cy-12}\n40\n2\n1\nProjet: ${document.getElementById('plProj').value||'-'}\n`;
+    dxf += `0\nTEXT\n8\nCARTOUCHE\n10\n${cx+5}\n20\n${cy-18}\n40\n2\n1\nDate: ${document.getElementById('plDate').value}\n`;
+    dxf += `0\nTEXT\n8\nCARTOUCHE\n10\n${cx+5}\n20\n${cy-24}\n40\n2\n1\nDessine par: NASRAOUI FATHI\n`;
+    dxf += `0\nTEXT\n8\nCARTOUCHE\n10\n${cx+5}\n20\n${cy-32}\n40\n2\n1\nSubTopo Engineering (c) 2025\n`;
+  }
+  
+  dxf += '0\nENDSEC\n0\nEOF\n';
+  
+  const b = new Blob([dxf],{type:'application/dxf'});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=u;a.download='plan_topo_'+new Date().toISOString().split('T')[0]+'.dxf';a.click();
+  logMsg('📐 DXF plan exporté');
+}
+
+// ===== EXPORT GLOBAL =====
+function exportPDF(){
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
+    pdf.setFillColor(26,41,128);
+    pdf.rect(0,0,210,20,'F');
+    pdf.setTextColor(255,215,0);
+    pdf.setFontSize(14);
+    pdf.text('SubTopo - Rapport de Transformation',5,13);
+    
+    pdf.setTextColor(0);
+    pdf.setFontSize(10);
+    pdf.text('Date: '+new Date().toLocaleString(),5,30);
+    pdf.text('Source EPSG: '+document.getElementById('srcEPSG').value,5,38);
+    pdf.text('Cible EPSG: '+document.getElementById('tgtEPSG').value,5,44);
+    
+    pdf.text('Paramètres de transformation:',5,55);
+    pdf.text('X0: '+document.getElementById('tX0').value+' m',10,62);
+    pdf.text('Y0: '+document.getElementById('tY0').value+' m',10,68);
+    pdf.text('Z0: '+document.getElementById('tZ0').value+' m',10,74);
+    pdf.text('ex: '+document.getElementById('tex').value+' "',10,80);
+    pdf.text('ey: '+document.getElementById('tey').value+' "',10,86);
+    pdf.text('ez: '+document.getElementById('tez').value+' "',10,92);
+    pdf.text('m: '+document.getElementById('tm').value+' ppm',10,98);
+    
+    let y = 115;
+    pdf.text('Points calculés:',5,y);y+=8;
+    DB.transforms.forEach(t=>{
+      if(y>270){ pdf.addPage(); y=20; }
+      pdf.text(`${t.name||'-'}: (${t.s.x.toFixed(3)}, ${t.s.y.toFixed(3)}, ${t.s.z.toFixed(3)}) -> (${t.t.x.toFixed(3)}, ${t.t.y.toFixed(3)}, ${t.t.z.toFixed(3)})`,10,y);
+      y+=6;
+    });
+    
+    pdf.setFontSize(8);
+    pdf.text('SubTopo Engineering - NASRAOUI FATHI - v5.0 PREMIUM',5,285);
+    pdf.save('subtopo_rapport_'+new Date().toISOString().split('T')[0]+'.pdf');
+    logMsg('📑 PDF rapport exporté');
+  } catch(err){ alert('Erreur: '+err.message); }
+}
+
+function exportCSV(){
+  if(!DB.points.length){ alert('Aucun point'); return; }
+  let csv = 'Nom;X;Y;Z;EPSG;Pays;Zone;Date\n';
+  DB.points.forEach(p=>{
+    csv += `${p.name};${p.x};${p.y};${p.z};${p.epsg};${p.country||''};${p.zone||''};${p.date||''}\n`;
+  });
+  const b = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=u;a.download='points_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
+  logMsg('📊 CSV exporté');
+}
+
+function exportDXF(){
+  if(!DB.points.length){ alert('Aucun point'); return; }
+  let dxf = '0\nSECTION\n2\nHEADER\n9\n$ACADVER\n1\nAC1015\n0\nENDSEC\n';
+  dxf += '0\nSECTION\n2\nENTITIES\n';
+  DB.points.forEach(p=>{
+    dxf += `0\nPOINT\n8\n${p.country||'POINTS'}\n10\n${p.x}\n20\n${p.y}\n30\n${p.z}\n`;
+    dxf += `0\nTEXT\n8\nTEXT\n10\n${p.x+2}\n20\n${p.y+2}\n30\n0\n40\n2\n1\n${p.name}\n`;
+  });
+  dxf += '0\nENDSEC\n0\nEOF\n';
+  const b = new Blob([dxf],{type:'application/dxf'});
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href=u;a.download='points_'+new Date().toISOString().split('T')[0]+'.dxf';a.click();
+  logMsg('📐 DXF exporté');
+}
+
+// Fermer modal en cliquant à l'extérieur
+window.onclick = e=>{
+  if(e.target.classList.contains('modal')) e.target.classList.remove('active');
+};
+</script>
+</body>
+</html>
